@@ -1,0 +1,455 @@
+/* ==========================================================================
+   天机系统 · 全站统一基准 / 视觉层
+   --------------------------------------------------------------------------
+   各页面历史上分属两套设计体系：
+     A 系  --bg-body / --text-main / --primary-color / --border-color
+     B 系  --paper   / --ink       / --vermillion    / --border-ink
+   此文件把两套变量名映射到同一组取值，使页面原有样式无需改写即可获得
+   一致的配色。本文件须在各页面 <style> 之后加载，以便覆盖其 :root 定义。
+
+   视觉层同时承担：纸面质感、抬头、导航、按钮、设置面板、滚动条、焦点态。
+   注意：--wx-* 五行色为盘面语义色，任何主题调整都不得改动其取值。
+   ========================================================================== */
+
+:root {
+    /* 纸面 */
+    --bg-body: #f5efe2;              --paper: #f5efe2;
+    --bg-card: #fffcf5;              --paper-card: #fffcf5;
+    --bg-panel-left: #fbf7ee;
+    --bg-input: #fffefa;
+    --paper-dark: #ece3d2;
+    --surface: #fffcf5;              --surface-alt: #faf5ea;
+    --surface-glass: rgba(255, 252, 245, 0.86);
+    --surface-cell: rgba(255, 252, 245, 0.97);
+    --halo: rgba(255, 252, 245, 0.95);
+    --bg-gradient: linear-gradient(180deg, #fffcf5 0%, #f5efe2 100%);
+
+    /* 墨色 */
+    --text-main: #2b2823;            --ink: #2b2823;
+    --text-secondary: #6b6255;       --ink-light: #6b6255;
+    --ink-faint: #a29889;
+
+    /* 朱色与辅色 */
+    --primary-color: #8c3030;        --vermillion: #8c3030;
+    --accent-color: #8c3030;         --primary-text: #8c3030;
+    --primary-hover: #702525;        --vermillion-light: #ab4a48;
+    --danger-color: #a33b3b;
+    --gold: #b18a3e;                 --gold-light: #d9bb72;
+    --gold-text: #8a6a1f;
+    --jade: #5a8a6a;                 --jade-light: #7aaa8a;
+
+    /* 描边、阴影、圆角 */
+    --border-color: #e0d5bf;         --border-ink: #e0d5bf;
+    --border-light: #ece3d3;
+    --shadow-sm: 0 1px 2px rgba(74, 58, 34, 0.05), 0 1px 1px rgba(74, 58, 34, 0.03);
+    --shadow-md: 0 6px 18px -6px rgba(74, 58, 34, 0.18), 0 2px 6px -2px rgba(74, 58, 34, 0.08);
+    --shadow-lg: 0 18px 40px -12px rgba(74, 58, 34, 0.26), 0 6px 14px -6px rgba(74, 58, 34, 0.12);
+    --radius-sm: 6px;
+    --radius-md: 10px;
+    --radius-lg: 18px;
+    --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+    --tj-serif: "Noto Serif SC", "Songti SC", "STSong", "SimSun", "STZhongsong", serif;
+    --tj-kai: "Kaiti", "STKaiti", "KaiTi", "Noto Serif SC", serif;
+    --tj-ring: rgba(140, 48, 48, 0.38);
+    --tj-soft: rgba(140, 48, 48, 0.075);
+
+    /* 爻象与五行（各模块通用，语义色，勿改） */
+    --yao-yang: #8b2f2f;            --yao-yin: #2c2a26;
+    --yao-bg: #e5e7eb;
+    --wx-mu: #2e9e44;               --wx-huo: #d64545;
+    --wx-tu: #8d6e2f;               --wx-jin: #c9a227;
+    --wx-shui: #2f6fb2;
+
+    /* 抬头尺寸，供页面布局计算 */
+    --tj-header-h: 80px;
+}
+
+[data-theme="dark"] {
+    --bg-body: #171614;              --paper: #171614;
+    --bg-card: #211f1c;              --paper-card: #211f1c;
+    --bg-panel-left: #1d1b19;
+    --bg-input: #2a2723;
+    --paper-dark: #302b26;
+    --surface: #211f1c;              --surface-alt: #2a2622;
+    --surface-glass: rgba(26, 24, 21, 0.88);
+    --surface-cell: rgba(33, 31, 28, 0.97);
+    --halo: rgba(33, 31, 28, 0.95);
+    --bg-gradient: linear-gradient(180deg, #211f1c 0%, #171614 100%);
+
+    --text-main: #ece5d8;            --ink: #ece5d8;
+    --text-secondary: #aca396;       --ink-light: #aca396;
+    --ink-faint: #7d756a;
+
+    --primary-color: #b5504c;        --vermillion: #b5504c;
+    --accent-color: #b5504c;         --primary-text: #cf6862;
+    --primary-hover: #cf6862;        --vermillion-light: #d97b71;
+    --danger-color: #c95151;
+    --gold: #c9a850;                 --gold-light: #d4b85c;
+    --gold-text: #d4b85c;
+    --jade: #6f9c7e;                 --jade-light: #7aaa8a;
+
+    --border-color: #3a352f;         --border-ink: #3f3933;
+    --border-light: #302c27;
+    --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.32);
+    --shadow-md: 0 6px 18px rgba(0, 0, 0, 0.40);
+    --shadow-lg: 0 16px 36px rgba(0, 0, 0, 0.50);
+    --tj-ring: rgba(207, 104, 98, 0.55);
+    --tj-soft: rgba(181, 80, 76, 0.14);
+
+    --yao-yang: #c95151;             --yao-yin: #a39c91;
+    --yao-bg: #4b5563;
+}
+
+/* ==========================================================================
+   全局质感：纸纹、光晕、选中态、滚动条、焦点态
+   ========================================================================== */
+
+html { scroll-behavior: smooth; }
+
+body {
+    font-family: var(--tj-serif);
+    -webkit-font-smoothing: antialiased;
+    /* 只叠加背景层，不覆盖各页自行声明的 background-color */
+    background-image:
+        radial-gradient(1100px 560px at 50% -12%, rgba(255, 255, 255, 0.55), transparent 72%),
+        radial-gradient(900px 520px at 100% 100%, rgba(177, 138, 62, 0.07), transparent 70%),
+        repeating-linear-gradient(0deg, rgba(90, 70, 40, 0.016) 0 1px, transparent 1px 4px);
+    background-attachment: fixed;
+}
+[data-theme="dark"] body {
+    background-image:
+        radial-gradient(1100px 560px at 50% -12%, rgba(217, 185, 114, 0.055), transparent 72%),
+        radial-gradient(900px 520px at 100% 100%, rgba(177, 138, 62, 0.035), transparent 70%),
+        repeating-linear-gradient(0deg, rgba(255, 255, 255, 0.010) 0 1px, transparent 1px 4px);
+}
+
+::selection { background: rgba(140, 48, 48, 0.20); color: var(--text-main); }
+[data-theme="dark"] ::selection { background: rgba(181, 80, 76, 0.35); }
+
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb {
+    background: rgba(140, 120, 90, 0.30);
+    background-clip: content-box;
+    border: 2px solid transparent;
+    border-radius: 10px;
+}
+::-webkit-scrollbar-thumb:hover { background: rgba(140, 120, 90, 0.55); background-clip: content-box; }
+[data-theme="dark"] ::-webkit-scrollbar-thumb { background: rgba(160, 145, 120, 0.28); background-clip: content-box; }
+[data-theme="dark"] ::-webkit-scrollbar-thumb:hover { background: rgba(190, 175, 150, 0.48); background-clip: content-box; }
+
+/* 多数页面未给表单控件继承字体；统一后中数字形更整齐 */
+button, input, select, textarea { font-family: inherit; }
+
+/* 六爻页有 * { outline: none }，故用 box-shadow 实现键盘焦点环 */
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 2px var(--bg-card), 0 0 0 4px var(--tj-ring);
+}
+
+.btn, button {
+    transition: transform 0.18s ease, box-shadow 0.18s ease,
+                background-color 0.18s ease, border-color 0.18s ease,
+                filter 0.18s ease, opacity 0.18s ease;
+}
+.btn:hover, button.btn:hover { filter: brightness(1.04); transform: translateY(-1px); }
+.btn:active, button.btn:active { transform: translateY(0); }
+
+/* ==========================================================================
+   统一抬头
+   ========================================================================== */
+
+/* 各页是否声明全局 box-sizing 不一致，公共组件自带盒模型以保证尺寸统一 */
+.tj-header, .tj-header *, .tj-modal, .tj-modal * { box-sizing: border-box; }
+
+.tj-header {
+    height: var(--tj-header-h);
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    gap: 1.6rem;
+    padding: 0 2.5rem;
+    background: var(--surface-glass);
+    -webkit-backdrop-filter: blur(14px) saturate(1.35);
+    backdrop-filter: blur(14px) saturate(1.35);
+    border-bottom: 1px solid var(--border-light);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.5), var(--shadow-sm);
+    position: sticky;
+    top: 0;
+    z-index: 30;
+    transition: box-shadow 0.25s ease, border-color 0.25s ease;
+}
+/* 底部一道朱金渐变细线，替代生硬的纯色描边 */
+.tj-header::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: -1px;
+    height: 1px;
+    background: linear-gradient(90deg,
+        transparent 0%, rgba(140, 48, 48, 0.32) 20%,
+        rgba(177, 138, 62, 0.48) 50%,
+        rgba(140, 48, 48, 0.32) 80%, transparent 100%);
+    pointer-events: none;
+}
+.tj-header.is-scrolled {
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.4), 0 6px 22px -10px rgba(74, 58, 34, 0.40);
+}
+[data-theme="dark"] .tj-header { box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04), var(--shadow-sm); }
+[data-theme="dark"] .tj-header.is-scrolled { box-shadow: 0 8px 24px -10px rgba(0, 0, 0, 0.75); }
+
+.tj-brand {
+    display: flex;
+    align-items: center;
+    gap: 0.65rem;
+    text-decoration: none;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+/* 朱印式品牌标记 */
+.tj-brand-mark {
+    width: 34px;
+    height: 34px;
+    flex-shrink: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--tj-kai);
+    font-size: 1.14rem;
+    font-weight: 700;
+    line-height: 1;
+    color: #fff8ec;
+    background: var(--primary-color);
+    border-radius: 7px;
+    transform: rotate(-3deg);
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.30), 0 2px 7px rgba(140, 48, 48, 0.28);
+    transition: transform 0.25s ease;
+}
+.tj-brand:hover .tj-brand-mark { transform: rotate(0deg); }
+.tj-brand-name {
+    font-family: var(--tj-kai);
+    font-size: 1.55rem;
+    font-weight: 700;
+    letter-spacing: 0.14em;
+    color: var(--primary-color);
+    line-height: 1;
+}
+.tj-sep {
+    width: 1px;
+    height: 17px;
+    background: var(--border-color);
+    display: inline-block;
+    margin: 0 0.1rem;
+}
+.tj-mod {
+    font-size: 0.95rem;
+    letter-spacing: 0.12em;
+    color: var(--text-secondary);
+}
+
+.tj-nav {
+    display: flex;
+    align-items: center;
+    gap: 0.15rem;
+    margin-left: auto;
+    height: 100%;
+}
+.tj-nav a {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    height: 38px;
+    color: var(--text-secondary);
+    text-decoration: none;
+    font-size: 0.93rem;
+    letter-spacing: 0.06em;
+    padding: 0 0.95rem;
+    border-radius: var(--radius-sm);
+    white-space: nowrap;
+    transition: color 0.2s, background-color 0.2s;
+}
+.tj-nav a::after {
+    content: "";
+    position: absolute;
+    left: 50%;
+    right: 50%;
+    bottom: 3px;
+    height: 2px;
+    border-radius: 2px;
+    background: var(--primary-color);
+    transition: left 0.22s ease, right 0.22s ease, opacity 0.22s ease;
+    opacity: 0;
+}
+.tj-nav a:hover { color: var(--primary-color); background: var(--tj-soft); }
+.tj-nav a:hover::after { left: 24%; right: 24%; opacity: 0.55; }
+.tj-nav a.active {
+    color: var(--primary-color);
+    font-weight: 700;
+    background: var(--tj-soft);
+}
+.tj-nav a.active::after { left: 22%; right: 22%; opacity: 1; }
+
+.tj-actions { display: flex; align-items: center; gap: 0.5rem; flex-shrink: 0; }
+
+.tj-icon-btn {
+    width: 34px;
+    height: 34px;
+    border-radius: 10px;
+    border: 1px solid var(--border-color);
+    background: var(--surface-alt);
+    color: var(--text-secondary);
+    font-size: 1rem;
+    line-height: 1;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: color 0.2s, border-color 0.2s, background-color 0.2s,
+                transform 0.2s ease, box-shadow 0.2s ease;
+}
+.tj-icon-btn:hover {
+    color: var(--primary-color);
+    border-color: var(--primary-color);
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-sm);
+}
+
+/* ==========================================================================
+   统一设置面板
+   ========================================================================== */
+
+.tj-modal {
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 200;
+    background: rgba(20, 18, 16, 0.45);
+    -webkit-backdrop-filter: blur(3px);
+    backdrop-filter: blur(3px);
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+}
+.tj-modal-card {
+    width: 100%;
+    max-width: 400px;
+    position: relative;
+    overflow: hidden;
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: 16px;
+    box-shadow: var(--shadow-lg);
+    padding: 1.6rem 1.7rem 1.5rem;
+    animation: tj-pop 0.2s ease-out;
+}
+.tj-modal-card::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, var(--primary-color), var(--gold), var(--primary-color));
+}
+@keyframes tj-pop {
+    from { opacity: 0; transform: translateY(10px) scale(0.985); }
+    to   { opacity: 1; transform: none; }
+}
+.tj-modal-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.3rem;
+}
+.tj-modal-head h3 {
+    margin: 0;
+    font-family: var(--tj-kai);
+    font-size: 1.25rem;
+    letter-spacing: 0.12em;
+    color: var(--text-main);
+}
+.tj-modal-head button {
+    border: 0;
+    background: transparent;
+    color: var(--text-secondary);
+    font-size: 1.5rem;
+    cursor: pointer;
+    line-height: 1;
+}
+.tj-modal-head button:hover { color: var(--primary-color); }
+.tj-modal-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.95rem;
+}
+.tj-modal hr {
+    border: 0;
+    border-top: 1px solid var(--border-light);
+    margin: 1.3rem 0;
+}
+.tj-modal .tj-contact { text-align: center; font-size: 0.86rem; line-height: 1.9; color: var(--text-secondary); }
+.tj-modal .tj-contact b { color: var(--primary-color); font-weight: 600; }
+.tj-btn {
+    border: 1px solid var(--primary-color);
+    background: transparent;
+    color: var(--primary-color);
+    border-radius: var(--radius-sm);
+    padding: 0.4rem 1.1rem;
+    font-size: 0.86rem;
+    cursor: pointer;
+    transition: background-color 0.2s, color 0.2s, transform 0.2s ease;
+}
+.tj-btn:hover { background: var(--primary-color); color: #fff; }
+
+@media (max-width: 1100px) {
+    .tj-header {
+        height: auto;
+        min-height: 68px;
+        flex-wrap: wrap;
+        padding: 0.7rem 1.2rem;
+        gap: 0.6rem 1rem;
+    }
+    .tj-nav {
+        order: 3;
+        width: 100%;
+        height: auto;
+        margin-left: 0;
+        justify-content: center;
+        flex-wrap: nowrap;
+        gap: 0.15rem;
+    }
+    .tj-nav a {
+        padding: 0 0.3rem;
+        font-size: 0.78rem;
+        letter-spacing: 0;
+    }
+    .tj-actions { margin-left: auto; }
+}
+
+/* 窄屏：七项导航保持一行，避免末项单独换行居中 */
+@media (max-width: 560px) {
+    .tj-header { padding-left: 0.8rem; padding-right: 0.8rem; }
+    .tj-nav {
+        flex-wrap: nowrap;
+        gap: 0;
+        justify-content: space-between;
+    }
+    .tj-nav a {
+        height: 34px;
+        padding: 0 0.12rem;
+        font-size: 0.68rem;
+        letter-spacing: 0;
+    }
+    .tj-nav a.active { background: transparent; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    html { scroll-behavior: auto; }
+    .tj-modal-card { animation: none; }
+}

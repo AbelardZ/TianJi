@@ -1,0 +1,582 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>天机系统 · 梅花易数</title>
+    <style>
+        :root {
+            --ink: #2c2c2c;
+            --ink-light: #5a5a5a;
+            --ink-faint: #999;
+            --paper: #f5f0e8;
+            --paper-card: #faf7f0;
+            --paper-dark: #ebe4d5;
+            --vermillion: #c0403a;
+            --gold: #b8963e;
+            --gold-text: #8b6914;
+            --border-ink: #d4cbb8;
+            --border-light: #e5ddd0;
+            --shadow-sm: 0 2px 8px rgba(60,30,10,0.06);
+            --shadow-md: 0 4px 16px rgba(60,30,10,0.08);
+            --radius-sm: 4px;
+            --radius-md: 8px;
+            --radius-lg: 12px;
+            --surface: #fffef9;
+            --surface-alt: #fef9f8;
+            --bg-gradient: linear-gradient(180deg, #faf7f0 0%, #f3efe4 100%);
+            --yao-yang: #8b2f2f;
+            --yao-yin: #2c2a26;
+        }
+        [data-theme="dark"] {
+            --ink: #e8e2d5;
+            --ink-light: #b9b1a4;
+            --ink-faint: #8a8377;
+            --paper: #1c1a18;
+            --paper-card: #262320;
+            --vermillion: #c95151;
+            --gold: #c9a850;
+            --gold-text: #d4b85c;
+            --border-ink: #45403a;
+            --border-light: #38332e;
+            --surface: #302b27;
+            --surface-alt: #37312c;
+            --yao-yang: #c95151;
+            --yao-yin: #a39c91;
+        }
+
+        /* 五行语义色：与小六壬盘面同源，深浅色各一套 */
+        [data-wx="木"] { --wx-bg: #e8f2e9; --wx-bd: #bcd9c3; --wx-fg: #2b6a3e; }
+        [data-wx="火"] { --wx-bg: #fcebe8; --wx-bd: #f0c8c1; --wx-fg: #a6332c; }
+        [data-wx="土"] { --wx-bg: #f8efd9; --wx-bd: #e4d2a8; --wx-fg: #8a6520; }
+        [data-wx="金"] { --wx-bg: #f4f2ec; --wx-bd: #d8d3c6; --wx-fg: #6a6455; }
+        [data-wx="水"] { --wx-bg: #e2ecf8; --wx-bd: #b6cbe4; --wx-fg: #1d4a75; }
+        [data-theme="dark"] [data-wx="木"] { --wx-bg: #1f2e21; --wx-bd: #35503a; --wx-fg: #7fb884; }
+        [data-theme="dark"] [data-wx="火"] { --wx-bg: #31211f; --wx-bd: #5a3733; --wx-fg: #d98178; }
+        [data-theme="dark"] [data-wx="土"] { --wx-bg: #2e2718; --wx-bd: #4d4128; --wx-fg: #c9a86b; }
+        [data-theme="dark"] [data-wx="金"] { --wx-bg: #2b2b28; --wx-bd: #494946; --wx-fg: #d0cec4; }
+        [data-theme="dark"] [data-wx="水"] { --wx-bg: #182430; --wx-bd: #2b415a; --wx-fg: #85addb; }
+
+        * { box-sizing: border-box; }
+        body {
+            margin: 0;
+            font-family: "Noto Serif SC", "SimSun", "STZhongsong", serif;
+            background: var(--paper);
+            color: var(--ink);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            transition: background-color .3s, color .3s;
+        }
+
+        /* 左右留白对称，盘面落在屏幕正中 */
+        .main-container {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) minmax(0, 760px) minmax(0, 1fr);
+            flex: 1;
+            gap: 1.2rem;
+            padding: 1.2rem;
+            max-width: 1600px;
+            margin: 0 auto;
+            width: 100%;
+            align-items: start;
+        }
+        .left-panel {
+            grid-column: 1;
+            justify-self: end;
+            width: 100%;
+            max-width: 350px;
+            background: var(--paper-card);
+            border: 1px solid var(--border-light);
+            border-radius: var(--radius-md);
+            box-shadow: var(--shadow-sm);
+        }
+        .panel-content { padding: 1.35rem 1.35rem 1rem; }
+        .right-panel {
+            grid-column: 2;
+            background: var(--paper-card);
+            border: 1px solid var(--border-light);
+            border-radius: var(--radius-md);
+            box-shadow: var(--shadow-sm);
+            padding: 1.5rem 1.6rem 1.7rem;
+        }
+
+        .form-group { margin-bottom: 0.9rem; }
+        .form-group > label {
+            display: block;
+            margin-bottom: 0.35rem;
+            font-size: 0.83rem;
+            color: var(--ink-light);
+            letter-spacing: 0.08em;
+        }
+        .form-group input[type="date"],
+        .form-group input[type="time"],
+        .form-group input[type="text"],
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 0.48rem 0.65rem;
+            border: 1px solid var(--border-ink);
+            border-radius: var(--radius-sm);
+            background: var(--surface);
+            color: var(--ink);
+            font-family: inherit;
+            font-size: 0.88rem;
+        }
+        .form-group textarea { resize: vertical; }
+        .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
+            outline: none;
+            border-color: var(--gold);
+        }
+        .field-hint { margin-top: 0.35rem; font-size: 0.73rem; color: var(--ink-faint); line-height: 1.6; }
+        .field-required { margin-left: 0.3rem; font-size: 0.68rem; font-weight: 400; color: var(--vermillion); }
+
+        .method-switch { display: flex; flex-wrap: wrap; gap: 0.35rem; }
+        .method-switch label {
+            flex: 1;
+            min-width: 88px;
+            text-align: center;
+            font-size: 0.8rem;
+            padding: 0.38rem 0.2rem;
+            border: 1px solid var(--border-ink);
+            border-radius: var(--radius-sm);
+            color: var(--ink-light);
+            cursor: pointer;
+            transition: background-color .2s, color .2s, border-color .2s;
+        }
+        .method-switch input { position: absolute; opacity: 0; pointer-events: none; }
+        .method-switch label.on { background: var(--vermillion); border-color: var(--vermillion); color: #fff8ec; }
+        .param-group { display: none; }
+        .param-group.on { display: block; }
+        .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; }
+        .two-col .form-group { margin-bottom: 0.5rem; }
+
+        .btn {
+            display: inline-block;
+            width: 100%;
+            padding: 0.55rem 0.8rem;
+            border: 1px solid var(--vermillion);
+            border-radius: var(--radius-sm);
+            background: var(--vermillion);
+            color: #fff8ec;
+            font-family: inherit;
+            font-size: 0.88rem;
+            letter-spacing: 0.18em;
+            text-indent: 0.18em;
+            cursor: pointer;
+            transition: filter .2s, transform .2s;
+        }
+        .btn:hover { filter: brightness(1.08); }
+        .btn.ghost { background: transparent; color: var(--vermillion); }
+        .btn.ghost:hover { background: var(--vermillion); color: #fff8ec; }
+        .btn.mini { width: auto; padding: 0.35rem 0.75rem; font-size: 0.78rem; letter-spacing: 0.06em; text-indent: 0; }
+
+        .section-title {
+            margin: 1.35rem 0 0.7rem;
+            padding-bottom: 0.35rem;
+            border-bottom: 1px solid var(--border-light);
+            font-size: 0.76rem;
+            letter-spacing: 0.28em;
+            color: var(--ink-faint);
+        }
+        .alert-error {
+            margin-bottom: 0.8rem;
+            padding: 0.5rem 0.7rem;
+            border: 1px solid var(--vermillion);
+            border-radius: var(--radius-sm);
+            background: rgba(192, 64, 58, 0.08);
+            color: var(--vermillion);
+            font-size: 0.8rem;
+        }
+        .record-list { display: flex; flex-direction: column; gap: 0.4rem; max-height: 300px; overflow-y: auto; }
+        .record-item {
+            display: block;
+            text-decoration: none;
+            padding: 0.5rem 0.65rem;
+            border: 1px solid var(--border-light);
+            border-radius: var(--radius-sm);
+            color: var(--ink);
+            background: var(--surface);
+        }
+        .record-item.current { border-color: var(--vermillion); background: var(--surface-alt); }
+        .record-item:hover { border-color: var(--gold); }
+        .record-item .r1 { display: flex; justify-content: space-between; font-size: 0.7rem; color: var(--ink-faint); }
+        .record-item .r2 { margin: 0.2rem 0; font-size: 0.86rem; font-weight: 600; }
+        .record-item .r3 { font-size: 0.72rem; color: var(--ink-light); line-height: 1.5; }
+        .empty-hint { padding: 0.8rem; text-align: center; font-size: 0.8rem; color: var(--ink-faint); }
+
+        /* ---------------- 盘面 ---------------- */
+        .pan-head {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 0.4rem 1rem;
+            padding-bottom: 0.9rem;
+            margin-bottom: 1rem;
+            border-bottom: 1px solid var(--border-light);
+            font-size: 0.8rem;
+            color: var(--ink-light);
+        }
+        .pan-head b { color: var(--ink); font-weight: 600; }
+        .tag {
+            padding: 0.15rem 0.6rem;
+            border: 1px solid var(--border-ink);
+            border-radius: 999px;
+            font-size: 0.72rem;
+            letter-spacing: 0.08em;
+            color: var(--vermillion);
+            background: var(--surface-alt);
+        }
+        .tag.gold { color: var(--gold-text); border-color: var(--gold); }
+        .question-line {
+            margin: -0.35rem 0 1rem;
+            font-size: 0.9rem;
+            line-height: 1.7;
+            color: var(--ink);
+        }
+        .question-line b { color: var(--vermillion); font-weight: 600; letter-spacing: 0.12em; margin-right: 0.5rem; }
+
+        .gua-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.85rem; }
+        .gua-card {
+            border: 1px solid var(--border-light);
+            border-radius: var(--radius-md);
+            background: var(--surface);
+            padding: 1rem 0.7rem 0.9rem;
+            box-shadow: var(--shadow-sm);
+            text-align: center;
+        }
+        .gua-card.primary { border-color: var(--gold); }
+        .gua-label { font-size: 0.72rem; letter-spacing: 0.26em; color: var(--ink-faint); }
+        .gua-name {
+            margin: 0.35rem 0 0.15rem;
+            font-family: 'Kaiti', 'STKaiti', 'KaiTi', serif;
+            font-size: 1.4rem;
+            font-weight: 700;
+            letter-spacing: 0.1em;
+            color: var(--ink);
+        }
+        .gua-parts { font-size: 0.72rem; color: var(--ink-light); }
+        .gua-parts span[data-wx] { color: var(--wx-fg); }
+        .yao-list {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.32rem;
+            margin: 0.85rem auto 0.7rem;
+        }
+        .yao-row { display: flex; align-items: center; justify-content: center; gap: 0.4rem; height: 12px; }
+        .yao-idx { width: 1.1rem; text-align: right; font-size: 0.66rem; color: var(--ink-faint); }
+        .yao-bar { display: flex; gap: 6px; width: 76px; height: 8px; }
+        .yao-bar i { display: block; height: 8px; border-radius: 1px; }
+        .yao-bar.solid i { flex: 1; background: var(--yao-yang); }
+        .yao-bar.broken i { flex: 1; background: var(--yao-yin); }
+        .yao-mark { width: 1.1rem; text-align: left; font-size: 0.66rem; color: var(--vermillion); }
+        .yao-row.is-dong .yao-bar i { box-shadow: 0 0 0 2px rgba(192,64,58,0.28); }
+        .gua-meaning {
+            min-height: 2.8rem;
+            font-size: 0.75rem;
+            line-height: 1.7;
+            color: var(--ink-light);
+            padding-top: 0.55rem;
+            border-top: 1px dashed var(--border-light);
+        }
+
+        .ty-box {
+            margin-top: 1.2rem;
+            border: 1px solid var(--border-ink);
+            border-radius: var(--radius-md);
+            padding: 0.9rem 1.1rem;
+            background: var(--surface-alt);
+        }
+        .ty-head { font-size: 0.74rem; letter-spacing: 0.24em; color: var(--ink-faint); margin-bottom: 0.6rem; }
+        .ty-body { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem; font-size: 0.88rem; }
+        .ty-chip {
+            border: 1px solid var(--wx-bd, var(--border-ink));
+            background: var(--wx-bg, var(--surface));
+            border-radius: var(--radius-sm);
+            padding: 0.25rem 0.7rem;
+        }
+        .ty-chip b { color: var(--wx-fg, var(--ink)); font-weight: 600; }
+        .ty-arrow { color: var(--ink-faint); }
+        .ty-level { margin-left: auto; font-size: 1.02rem; letter-spacing: 0.1em; }
+        .ty-level.lv-good { color: #3f7d4e; }
+        .ty-level.lv-mid { color: var(--gold-text); }
+        .ty-level.lv-bad { color: var(--vermillion); }
+        .ty-note { margin-top: 0.55rem; font-size: 0.82rem; color: var(--ink-light); line-height: 1.8; }
+        .ty-sub { margin-top: 0.45rem; font-size: 0.78rem; color: var(--ink-faint); line-height: 1.7; }
+
+        .notes {
+            margin-top: 1.4rem;
+            padding-top: 0.9rem;
+            border-top: 1px solid var(--border-light);
+            font-size: 0.78rem;
+            color: var(--ink-faint);
+            line-height: 1.95;
+        }
+        .notes b { color: var(--ink-light); font-weight: 600; }
+        .notes .calc { color: var(--ink-light); }
+
+        @media (max-width: 1150px) {
+            .main-container { grid-template-columns: minmax(0, 1fr); justify-items: center; padding: 0.8rem; }
+            .left-panel, .right-panel { grid-column: 1; justify-self: center; width: 100%; }
+            .left-panel { max-width: 520px; }
+            .right-panel { max-width: 780px; }
+        }
+        @media (max-width: 560px) {
+            .right-panel { padding: 1rem 0.7rem 1.2rem; }
+            .gua-grid { grid-template-columns: minmax(0, 1fr); gap: 0.6rem; }
+            .gua-card { display: grid; grid-template-columns: 1fr auto; align-items: center; text-align: left; gap: 0 0.7rem; }
+            .gua-label, .gua-name, .gua-parts, .gua-meaning { grid-column: 1; }
+            .yao-list { grid-column: 2; grid-row: 1 / span 4; margin: 0; }
+            .gua-meaning { min-height: 0; }
+            .pan-head { font-size: 0.74rem; }
+        }
+    </style>
+    <link rel="stylesheet" href="/static/css/tianji.css">
+    <script src="/static/js/tianji.js"></script>
+</head>
+<body>
+    {% include '_header.html' %}
+
+    <div class="main-container">
+        <aside class="left-panel">
+            <div class="panel-content">
+                {% if error %}<div class="alert-error">{{ error }}</div>{% endif %}
+
+                <form method="GET" action="/meihua" id="qi-form">
+                    <div class="form-group">
+                        <label>起卦方式</label>
+                        <div class="method-switch">
+                            {% for key, label in method_options.items() %}
+                            <label class="{{ 'on' if params.method == key else '' }}">
+                                <input type="radio" name="method" value="{{ key }}"
+                                       {{ 'checked' if params.method == key else '' }}>
+                                <span>{{ label }}</span>
+                            </label>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>起卦日期</label>
+                        <input type="date" name="date" value="{{ date_value }}" required>
+                    </div>
+                    <div class="form-group">
+                        <label>起卦时刻</label>
+                        <input type="time" name="time" value="{{ time_value }}" required>
+                        <div class="field-hint">23:00 起属次日子时，年月日按次日农历取。</div>
+                    </div>
+
+                    <div class="param-group {{ 'on' if params.method == 'number' else '' }}" id="num-group">
+                        <div class="form-group">
+                            <label>报数（两个数）</label>
+                            <input type="text" name="numbers" value="{{ numbers_str }}"
+                                   inputmode="numeric" autocomplete="off" placeholder="如 37 82">
+                            <div class="field-hint">一数定上卦、二数定下卦，各除 8 取余；两数之和除 6 取余定动爻。</div>
+                        </div>
+                    </div>
+
+                    <div class="param-group {{ 'on' if params.method == 'manual' else '' }}" id="manual-group">
+                        <div class="two-col">
+                            <div class="form-group">
+                                <label>上卦</label>
+                                <select name="upper">
+                                    {% for t in trigrams %}
+                                    <option value="{{ t }}" {{ 'selected' if params.manual.upper == t else '' }}>{{ t }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>下卦</label>
+                                <select name="lower">
+                                    {% for t in trigrams %}
+                                    <option value="{{ t }}" {{ 'selected' if params.manual.lower == t else '' }}>{{ t }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>动爻（自下而上）</label>
+                            <select name="dong">
+                                {% for n in [1, 2, 3, 4, 5, 6] %}
+                                <option value="{{ n }}" {{ 'selected' if params.manual.dong == n else '' }}>第 {{ n }} 爻</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="field-hint">用于复盘经典卦例，真实时刻只记录农历与月令。</div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>年支分界</label>
+                        <select name="year_rule">
+                            {% for r in year_rules %}
+                            <option value="{{ r }}" {{ 'selected' if params.year_rule == r else '' }}>
+                                {{ '正月初一（农历年）' if r == '正月' else '立春（干支年）' }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <button type="submit" class="btn">起 卦</button>
+                </form>
+
+                <div class="section-title">记 录</div>
+                <form method="POST" action="/meihua" id="save-form">
+                    <input type="hidden" name="date" value="{{ date_value }}">
+                    <input type="hidden" name="time" value="{{ time_value }}">
+                    <input type="hidden" name="method" value="{{ params.method }}">
+                    <input type="hidden" name="numbers" value="{{ numbers_str }}">
+                    <input type="hidden" name="upper" value="{{ params.manual.upper }}">
+                    <input type="hidden" name="lower" value="{{ params.manual.lower }}">
+                    <input type="hidden" name="dong" value="{{ params.manual.dong }}">
+                    <input type="hidden" name="year_rule" value="{{ params.year_rule }}">
+                    <div class="form-group">
+                        <label for="saveQuestion">问事 <span class="field-required">必填</span></label>
+                        <textarea id="saveQuestion" name="question" rows="2" required
+                                  placeholder="所问何事？如：这份工作该不该接">{{ question }}</textarea>
+                    </div>
+                    <div class="form-group">
+                        <label>标的 / 姓名</label>
+                        <input type="text" name="subject" value="{{ subject }}" placeholder="如：张某、A 项目">
+                    </div>
+                    <div class="form-group">
+                        <label>备注</label>
+                        <textarea name="remarks" rows="2" placeholder="可留空">{{ remarks }}</textarea>
+                    </div>
+                    <button type="submit" class="btn ghost">保存此卦</button>
+                    {% if record_id %}
+                    <div style="margin-top:0.6rem; text-align:right">
+                        <button type="button" class="btn mini ghost" onclick="deleteMeihuaRecord()">删除记录</button>
+                    </div>
+                    {% endif %}
+                </form>
+
+                <div class="section-title">最近记录</div>
+                <div class="record-list">
+                    {% for r in records %}
+                    <a class="record-item {{ 'current' if record_id == r.id else '' }}"
+                       href="/meihua?record_id={{ r.id }}">
+                        <div class="r1"><span>{{ r.method_label }}</span><span>{{ r.time }}</span></div>
+                        <div class="r2">{{ r.question or '（未填问事）' }}</div>
+                        <div class="r3">{{ r.ben }} · {{ r.summary }}</div>
+                    </a>
+                    {% else %}
+                    <div class="empty-hint">尚无记录</div>
+                    {% endfor %}
+                </div>
+            </div>
+        </aside>
+
+        <main class="right-panel">
+            <div class="pan-head">
+                <span class="tag">{{ pan.method_label }}</span>
+                <span class="tag gold">{{ pan.dong_label }}</span>
+                <span>农历 <b>{{ pan.lunar_str }}</b> {{ pan.shichen }}</span>
+                <span><b>{{ pan.year_gz }}</b>年 {{ pan.month_gz }}月 {{ pan.day_gz }}日 {{ pan.time_gz }}时</span>
+                <span>{{ pan.datetime_str }}</span>
+                {% if pan.rolled %}<span class="tag">子时已换日</span>{% endif %}
+            </div>
+
+            {% if question %}
+            <div class="question-line"><b>问事</b>{{ question }}</div>
+            {% endif %}
+
+            {% set yao_names = ['初', '二', '三', '四', '五', '上'] %}
+            {% set guas = [('本 卦', pan.ben, true, 'primary'), ('互 卦', pan.hu, false, ''), ('变 卦', pan.bian, true, '')] %}
+            <div class="gua-grid">
+                {% for label, gua, movable, cls in guas %}
+                <div class="gua-card {{ cls }}">
+                    <div class="gua-label">{{ label }}</div>
+                    <div class="gua-name">{{ gua.name }}</div>
+                    <div class="gua-parts">
+                        上 <span data-wx="{{ gua.upper_wx }}">{{ gua.upper }}{{ gua.upper_nature }}{{ gua.upper_wx }}</span>
+                        · 下 <span data-wx="{{ gua.lower_wx }}">{{ gua.lower }}{{ gua.lower_nature }}{{ gua.lower_wx }}</span>
+                    </div>
+                    <div class="yao-list">
+                        {% for i in [5, 4, 3, 2, 1, 0] %}
+                        <div class="yao-row {{ 'is-dong' if movable and i == pan.dong - 1 else '' }}">
+                            <span class="yao-idx">{{ yao_names[i] }}</span>
+                            <span class="yao-bar {{ 'solid' if gua.lines[i] == 1 else 'broken' }}">
+                                {% if gua.lines[i] == 1 %}<i></i>{% else %}<i></i><i></i>{% endif %}
+                            </span>
+                            <span class="yao-mark">
+                                {% if movable and i == pan.dong - 1 %}{{ '动' if label == '本 卦' else '变' }}{% endif %}
+                            </span>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    <div class="gua-meaning">{{ gua.meaning }}</div>
+                </div>
+                {% endfor %}
+            </div>
+
+            <div class="ty-box">
+                <div class="ty-head">体 用</div>
+                <div class="ty-body">
+                    <span class="ty-chip" data-wx="{{ pan.ti.wx }}">体 · <b>{{ pan.ti.name }}{{ pan.ti.wx }}</b>（{{ pan.ti.pos }}）</span>
+                    <span class="ty-arrow">对</span>
+                    <span class="ty-chip" data-wx="{{ pan.yong.wx }}">用 · <b>{{ pan.yong.name }}{{ pan.yong.wx }}</b>（{{ pan.yong.pos }}）</span>
+                    <span class="ty-arrow">→</span>
+                    <span class="ty-chip">{{ pan.tiyong.rel }}</span>
+                    <span class="ty-level {{ 'lv-good' if pan.tiyong.level in ['大吉', '吉', '小吉'] else ('lv-mid' if pan.tiyong.level == '小凶' else 'lv-bad') }}">{{ pan.tiyong.level }}</span>
+                </div>
+                <div class="ty-note">{{ pan.tiyong.note }}。动爻所在之卦为用，不动之卦为体；以体卦五行为我，看用卦生克。</div>
+                <div class="ty-sub">
+                    变卦参考：用卦位置化为 <b>{{ pan.bian_tiyong.yong_name }}{{ pan.bian_tiyong.yong_wx }}</b>，
+                    与体卦成「{{ pan.bian_tiyong.rel }}」（{{ pan.bian_tiyong.level }}）——{{ pan.bian_tiyong.note }}。
+                </div>
+                <div class="ty-sub">
+                    月令旺衰：{{ pan.wang.month_zhi }}月 {{ pan.wang.season_wx }}旺，体卦 {{ pan.ti.wx }} 为
+                    <b>{{ pan.wang.state }}</b>（{{ pan.wang.note }}）。此为按节气月支的简化参考，未计日辰、外应。
+                </div>
+            </div>
+
+            <div class="notes">
+                <div class="calc"><b>本课算式</b>：{{ pan.calc_note }}</div>
+                <br>
+                <b>取法</b>：先天八卦数乾一、兑二、离三、震四、巽五、坎六、艮七、坤八；卦以八除、爻以六分，余 0 分别作 8 与 6。
+                本卦看当下，互卦取二三四爻为下互、三四五爻为上互看过程，变卦由动爻阴阳翻转看结果。
+                八卦五行取经卦本气（乾兑金、震巽木、坎水、离火、坤艮土），不用纳甲地支五行。
+                <br>
+                <b>口径</b>：时间起卦用年支数 + 农历月日 + 时辰数；数字起卦取「两数之和除六定动爻」一系（另有加时辰数、报三数两说，本页不混用）；
+                年支默认正月初一分界，可切立春。体用断语只是五行生克的倾向，不替代具体占断与外应。
+            </div>
+        </main>
+    </div>
+
+    <script>
+        function syncMethod() {
+            const el = document.querySelector('input[name="method"]:checked');
+            const v = el ? el.value : 'time';
+            document.querySelectorAll('.method-switch label').forEach(function (l) {
+                l.classList.toggle('on', l.contains(el));
+            });
+            const num = document.getElementById('num-group');
+            const manual = document.getElementById('manual-group');
+            if (num) num.classList.toggle('on', v === 'number');
+            if (manual) manual.classList.toggle('on', v === 'manual');
+        }
+
+        function deleteMeihuaRecord() {
+            const recordId = {{ record_id if record_id else 'null' }};
+            if (!recordId || !confirm('确认删除这条梅花易数记录？')) return;
+            fetch('/meihua/delete', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ record_id: recordId })
+            }).then(r => r.json()).then(function (res) {
+                if (res.status === 'success') {
+                    window.location.href = '/meihua';
+                } else {
+                    alert('删除失败：' + res.message);
+                }
+            }).catch(function () { alert('删除失败'); });
+        }
+
+        document.addEventListener('DOMContentLoaded', function () {
+            document.querySelectorAll('input[name="method"]').forEach(function (r) {
+                r.addEventListener('change', syncMethod);
+            });
+            syncMethod();
+        });
+    </script>
+</body>
+</html>

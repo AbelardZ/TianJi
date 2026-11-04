@@ -3,5 +3,13 @@ __pycache__/
 .venv/
 venv/
 *.sqlite3
+*.sqlite3.*
 *.db
 .env
+
+# 本地数据与运行产物
+tianji.sqlite3
+archive/
+outputs/
+.workbuddy/
+.probe-report.txt

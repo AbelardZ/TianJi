@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>天机 六爻 </title>
+    <title>天机系统 · 六爻排盘</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <style>
         :root {
@@ -63,28 +63,6 @@
             transition: background-color 0.3s ease, color 0.3s ease;
         }
 
-        .top-navbar {
-            width: 100%;
-            height: 80px;
-            background-color: var(--bg-card);
-            border-bottom: 1px solid var(--border-color);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 0 3rem;
-            box-shadow: var(--shadow-sm);
-            z-index: 10;
-        }
-
-        .logo-title {
-            font-size: 2.2rem;
-            font-family: 'Kaiti', 'STKaiti', serif;
-            letter-spacing: 0.15em;
-            color: var(--primary-color);
-            margin: 0;
-            font-weight: 700;
-        }
-
         .main-wrapper {
             flex: 1;
             display: flex;
@@ -117,20 +95,59 @@
             overflow-y: auto;
         }
 
-        .settings-btn {
-            background: transparent;
-            border: none;
-            color: var(--text-secondary);
-            cursor: pointer;
-            font-size: 1.2rem;
-            padding: 0.25rem;
-            border-radius: var(--radius-md);
-            transition: color 0.2s, background-color 0.2s;
+        .history-block {
+            margin-top: 1.75rem;
+            border-top: 1px solid var(--border-color);
+            padding-top: 1.25rem;
         }
-        .settings-btn:hover {
+        .history-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.75rem;
+            font-weight: 700;
             color: var(--primary-color);
-            background-color: rgba(0,0,0,0.05);
+            font-size: 0.95rem;
         }
+        .history-search {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            margin-bottom: 0.75rem;
+        }
+        .history-search select, .history-search input {
+            padding: 0.4rem;
+            font-size: 0.82rem;
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            background-color: var(--bg-input);
+            color: var(--text-main);
+        }
+        .history-search select { flex: 1; min-width: 5rem; }
+        .history-search input[type="text"] { flex: 1; min-width: 6rem; }
+        .history-search input[type="date"] { flex: 1; min-width: 7rem; }
+        .history-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            max-height: 420px;
+            overflow-y: auto;
+        }
+        .history-item {
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            padding: 0.6rem 0.75rem;
+            background-color: var(--bg-card);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .history-time { font-size: 0.78rem; color: var(--text-secondary); }
+        .history-subject { font-size: 0.9rem; font-weight: 600; }
+        .history-meta { font-size: 0.75rem; color: var(--text-secondary); font-weight: 400; margin-left: 0.4rem; }
+        .history-actions { display: flex; gap: 0.35rem; flex-shrink: 0; }
+        .history-empty { color: var(--text-secondary); font-size: 0.85rem; text-align: center; padding: 0.75rem; }
 
         .panel-body {
             padding: 1.5rem;
@@ -558,23 +575,19 @@
 
         .preview-text { font-size: 0.8rem; color: var(--primary-color); margin-left: 0.5rem; }
     </style>
+    <link rel="stylesheet" href="/static/css/tianji.css">
+    <script src="/static/js/tianji.js"></script>
 </head>
 <body>
 
-<div class="top-navbar">
-    <h1 class="logo-title">天机 六爻</h1>
-    <div style="display: flex; gap: 1.5rem;">
-        <a href="/history" class="settings-btn" title="历史记录" style="text-decoration: none; display: flex; align-items: center; justify-content: center; font-size: 1.5rem;">📜</a>
-        <button class="settings-btn" onclick="openSettings()" title="设置" style="font-size: 1.5rem;">⚙</button>
-    </div>
-</div>
+{% include '_header.html' %}
 
 <div class="main-wrapper">
     <div class="container" style="flex-direction: row;">
         <!-- Left Panel -->
         <div class="left-panel">
             <div class="panel-body">
-                <form method="POST" action="/" id="mainForm">
+                <form method="POST" action="/liuyao" id="mainForm">
                 <input type="hidden" name="input_mode" id="input_mode" value="{{ input_mode or 'manual' }}">
 
                 <div class="form-group">
@@ -674,9 +687,55 @@
 
                 <div class="btn-group">
                     <button type="submit" class="btn btn-primary">开始排盘</button>
-                    <button type="button" class="btn btn-secondary" onclick="window.location.href='/'">重置</button>
+                    <button type="button" class="btn btn-secondary" onclick="window.location.href='/liuyao'">重置</button>
                 </div>
             </form>
+
+            <div class="history-block">
+                <div class="history-header">
+                    <span>历史记录</span>
+                    <button type="button" class="btn-sm" onclick="toggleHistory()">收起 / 展开</button>
+                </div>
+                <div id="history-content">
+                    {% if available_years %}
+                    <form method="GET" action="/liuyao" class="history-search">
+                        <select name="h_year" onchange="this.form.submit()">
+                            {% for y in available_years %}
+                            <option value="{{ y }}" {% if y == h_year %}selected{% endif %}>{{ y }}年</option>
+                            {% endfor %}
+                        </select>
+                        <input type="text" name="h_subject" value="{{ h_subject }}" placeholder="标的">
+                        <input type="text" name="h_user" value="{{ h_user }}" placeholder="用户">
+                        <input type="date" name="h_date" value="{{ h_date }}">
+                        <button type="submit" class="btn-sm">查询</button>
+                    </form>
+                    {% if history_results %}
+                    <div class="history-list">
+                        {% for r in history_results %}
+                        <div class="history-item">
+                            <div>
+                                <div class="history-time">{{ r.time }}</div>
+                                <div class="history-subject">{{ r.subject }}<span class="history-meta">{{ r.user }} · {{ r.mode }}</span></div>
+                            </div>
+                            <div class="history-actions">
+                                <a class="btn-sm" href="/liuyao?year={{ h_year }}&id={{ r.id }}">查看</a>
+                                <button class="btn-sm btn-danger"
+                                        data-year="{{ h_year }}"
+                                        data-id="{{ r.id }}"
+                                        data-subject="{{ r.subject }}"
+                                        onclick="deleteHistoryRecordFromButton(this)">删除</button>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <div class="history-empty">暂无记录</div>
+                    {% endif %}
+                    {% else %}
+                    <div class="history-empty">暂无年份数据</div>
+                    {% endif %}
+                </div>
+            </div>
         </div>
     </div>
 
@@ -688,7 +747,7 @@
                 {% if is_history %}
                 <button type="button" class="btn-sm" onclick="updateRemarks()">更新备注</button>
                 <button type="button" class="btn-sm btn-danger" onclick="deleteCurrentHistory()">删除记录</button>
-                <button type="button" class="btn-sm" onclick="window.location.href='/history'">返回列表</button>
+                <button type="button" class="btn-sm" onclick="window.location.href='/liuyao'">新增排盘</button>
                 {% else %}
                 <button type="button" class="btn-sm" onclick="saveToDB()">保存</button>
                 {% endif %}
@@ -775,45 +834,38 @@
 </div>
 </div> <!-- 补全了 main-wrapper 的闭合 -->
 
-<!-- Settings Modal -->
-<div id="settingsModal" class="modal">
-    <div class="modal-content">
-        <div class="modal-header">
-            <h3>设置</h3>
-            <button class="close-btn" onclick="closeSettings()">&times;</button>
-        </div>
-        <div class="modal-body">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
-                <span style="font-weight: 500;">深色模式</span>
-                <button type="button" class="btn-sm" onclick="toggleTheme()" style="padding: 0.5rem 1rem;">切换</button>
-            </div>
-            <hr style="border: 0; border-top: 1px solid var(--border-color); margin: 1.5rem 0;">
-            <div style="text-align: center;">
-                <p style="font-weight: 600; margin-bottom: 0.5rem;">联系作者</p>
-                <p style="font-size: 0.9rem; color: var(--text-secondary); margin-bottom: 0.5rem;">如需交流或反馈，可发送邮件至：</p>
-                <p style="color: var(--primary-color); font-weight: 600;">zhang.haoyan@outlook.com</p>
-            </div>
-        </div>
-    </div>
-</div>
-
 <script>
-    // Theme Management
-    function toggleTheme() {
-        const body = document.body;
-        const currentTheme = body.getAttribute('data-theme');
-        const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
-        body.setAttribute('data-theme', newTheme);
-        localStorage.setItem('theme', newTheme);
+    // Embedded history
+    function toggleHistory() {
+        const el = document.getElementById('history-content');
+        el.style.display = el.style.display === 'none' ? 'block' : 'none';
     }
-    if (localStorage.getItem('theme') === 'dark') {
-        document.body.setAttribute('data-theme', 'dark');
+    function deleteHistoryRecordFromButton(button) {
+        deleteHistoryRecord(button.dataset.year, button.dataset.id, button.dataset.subject);
     }
-
-    // Modal
-    function openSettings() { document.getElementById('settingsModal').style.display = 'flex'; }
-    function closeSettings() { document.getElementById('settingsModal').style.display = 'none'; }
-    window.onclick = function(e) { if (e.target == document.getElementById('settingsModal')) closeSettings(); }
+    function deleteHistoryRecord(year, recordId, subject) {
+        const label = subject ? `「${subject}」` : `ID ${recordId}`;
+        if (!confirm(`确定删除 ${year} 年记录 ${label} 吗？此操作不可恢复。`)) {
+            return;
+        }
+        fetch('/history/delete', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({year_table: year, record_id: recordId})
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (data.status === 'success') {
+                window.location.reload();
+            } else {
+                alert('删除失败: ' + (data.message || '未知错误'));
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('删除出错: ' + error.message);
+        });
+    }
 
     // Tabs
     function switchTab(mode) {

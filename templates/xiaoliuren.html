@@ -1,0 +1,639 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>天机系统 · 小六壬</title>
+    <style>
+        :root {
+            --ink: #2c2c2c;
+            --ink-light: #5a5a5a;
+            --ink-faint: #999;
+            --paper: #f5f0e8;
+            --paper-card: #faf7f0;
+            --paper-dark: #ebe4d5;
+            --vermillion: #c0403a;
+            --gold: #b8963e;
+            --gold-text: #8b6914;
+            --border-ink: #d4cbb8;
+            --border-light: #e5ddd0;
+            --shadow-sm: 0 2px 8px rgba(60,30,10,0.06);
+            --shadow-md: 0 4px 16px rgba(60,30,10,0.08);
+            --radius-sm: 4px;
+            --radius-md: 8px;
+            --radius-lg: 12px;
+            --surface: #fffef9;
+            --surface-alt: #fef9f8;
+            --bg-gradient: linear-gradient(180deg, #faf7f0 0%, #f3efe4 100%);
+        }
+
+        [data-theme="dark"] {
+            --ink: #e8e2d5;
+            --ink-light: #b9b1a4;
+            --ink-faint: #8a8377;
+            --paper: #1c1a18;
+            --paper-card: #262320;
+            --paper-dark: #332e29;
+            --vermillion: #c95151;
+            --gold: #c9a850;
+            --gold-text: #d4b85c;
+            --border-ink: #45403a;
+            --border-light: #38332e;
+            --shadow-sm: 0 2px 8px rgba(0,0,0,0.35);
+            --shadow-md: 0 4px 16px rgba(0,0,0,0.45);
+            --surface: #302b27;
+            --surface-alt: #37312c;
+            --bg-gradient: linear-gradient(180deg, #262320 0%, #201d1a 100%);
+        }
+
+        /* 五行配色：宫位底色与地支字色同出于此，两派共用 */
+        [data-wx="木"] { --wx-bg: #e8f2e9; --wx-bd: #bcd9c3; --wx-fg: #2b6a3e; }
+        [data-wx="火"] { --wx-bg: #fcebe8; --wx-bd: #f0c8c1; --wx-fg: #a6332c; }
+        [data-wx="土"] { --wx-bg: #f8efd9; --wx-bd: #e4d2a8; --wx-fg: #8a6520; }
+        [data-wx="金"] { --wx-bg: #f4f2ec; --wx-bd: #d8d3c6; --wx-fg: #6a6455; }
+        [data-wx="水"] { --wx-bg: #e2ecf8; --wx-bd: #b6cbe4; --wx-fg: #1d4a75; }
+
+        [data-theme="dark"] [data-wx="木"] { --wx-bg: #1f2e21; --wx-bd: #35503a; --wx-fg: #7fb884; }
+        [data-theme="dark"] [data-wx="火"] { --wx-bg: #31211f; --wx-bd: #5a3733; --wx-fg: #d98178; }
+        [data-theme="dark"] [data-wx="土"] { --wx-bg: #2e2718; --wx-bd: #4d4128; --wx-fg: #c9a86b; }
+        [data-theme="dark"] [data-wx="金"] { --wx-bg: #2b2b28; --wx-bd: #494946; --wx-fg: #d0cec4; }
+        [data-theme="dark"] [data-wx="水"] { --wx-bg: #182430; --wx-bd: #2b415a; --wx-fg: #85addb; }
+
+        * { box-sizing: border-box; }
+
+        body {
+            margin: 0;
+            font-family: "Noto Serif SC", "SimSun", "STZhongsong", serif;
+            background: var(--paper);
+            color: var(--ink);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            transition: background-color .3s, color .3s;
+        }
+
+        /* 三列：左右各 1fr 对称留白，盘面居中间一列，落在屏幕正中 */
+        .main-container {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) minmax(0, 680px) minmax(0, 1fr);
+            flex: 1;
+            gap: 1.2rem;
+            padding: 1.2rem;
+            max-width: 1560px;
+            margin: 0 auto;
+            width: 100%;
+            align-items: start;
+        }
+
+        .left-panel {
+            grid-column: 1;
+            justify-self: end;
+            width: 100%;
+            max-width: 340px;
+            background: var(--paper-card);
+            border: 1px solid var(--border-light);
+            border-radius: var(--radius-md);
+            box-shadow: var(--shadow-sm);
+        }
+        .panel-content { padding: 1.4rem 1.4rem 1rem; }
+
+        .form-group { margin-bottom: 1rem; }
+        .form-group label {
+            display: block;
+            margin-bottom: 0.4rem;
+            font-size: 0.85rem;
+            color: var(--ink-light);
+            letter-spacing: 0.08em;
+        }
+        .form-group input[type="date"],
+        .form-group input[type="time"],
+        .form-group input[type="text"] {
+            width: 100%;
+            padding: 0.55rem 0.8rem;
+            border: 1px solid var(--border-ink);
+            border-radius: var(--radius-sm);
+            background: var(--surface);
+            color: var(--ink);
+            font-size: 0.9rem;
+            font-family: inherit;
+        }
+        .form-group input:focus {
+            outline: none;
+            border-color: var(--vermillion);
+            box-shadow: 0 0 0 2px rgba(192,64,58,0.08);
+        }
+
+        .school-switch,
+        .method-switch {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0.5rem;
+        }
+        .school-switch a {
+            display: block;
+            text-align: center;
+            padding: 0.55rem 0.3rem;
+            border: 1px solid var(--border-ink);
+            border-radius: var(--radius-sm);
+            color: var(--ink-light);
+            text-decoration: none;
+            font-size: 0.92rem;
+            letter-spacing: 0.12em;
+            background: var(--surface);
+            transition: all .18s;
+        }
+        .school-switch a:hover { border-color: var(--vermillion); color: var(--vermillion); }
+        .school-switch a.active {
+            background: var(--vermillion);
+            border-color: var(--vermillion);
+            color: #fff;
+        }
+
+        .method-switch label { margin: 0; cursor: pointer; }
+        .method-switch input[type="radio"] {
+            position: absolute;
+            opacity: 0;
+            width: 0; height: 0;
+            pointer-events: none;
+        }
+        .method-switch span {
+            display: block;
+            text-align: center;
+            padding: 0.5rem 0.3rem;
+            border: 1px solid var(--border-ink);
+            border-radius: var(--radius-sm);
+            color: var(--ink-light);
+            font-size: 0.86rem;
+            letter-spacing: 0.1em;
+            background: var(--surface);
+            transition: all .18s;
+        }
+        .method-switch label:hover span { border-color: var(--vermillion); color: var(--vermillion); }
+        .method-switch input:checked + span {
+            background: var(--vermillion);
+            border-color: var(--vermillion);
+            color: #fff;
+        }
+        .field-hint { font-size: 0.75rem; color: var(--ink-faint); margin-top: 0.35rem; line-height: 1.6; }
+        #num-group { display: none; }
+        #num-group.on { display: block; }
+
+        .btn {
+            display: inline-block;
+            width: 100%;
+            padding: 0.62rem 1rem;
+            border: 1px solid var(--vermillion);
+            border-radius: var(--radius-sm);
+            background: var(--vermillion);
+            color: #fff;
+            font-family: inherit;
+            font-size: 0.95rem;
+            letter-spacing: 0.18em;
+            cursor: pointer;
+            transition: opacity .2s;
+        }
+        .btn:hover { opacity: .88; }
+        .btn.ghost { background: transparent; color: var(--vermillion); }
+        .btn.ghost:hover { background: rgba(192,64,58,0.07); opacity: 1; }
+
+        .section-title {
+            font-size: 0.8rem;
+            color: var(--ink-faint);
+            letter-spacing: 0.2em;
+            margin: 1.4rem 0 0.7rem;
+            padding-bottom: 0.35rem;
+            border-bottom: 1px solid var(--border-light);
+        }
+
+        .record-list { max-height: 320px; overflow-y: auto; }
+        .record-item {
+            display: block;
+            text-decoration: none;
+            color: var(--ink);
+            padding: 0.55rem 0.6rem;
+            border: 1px solid transparent;
+            border-bottom: 1px solid var(--border-light);
+            font-size: 0.83rem;
+            transition: background .15s, border-color .15s;
+        }
+        .record-item:hover { background: var(--surface-alt); border-color: var(--border-ink); }
+        .record-item.current { background: var(--surface-alt); border-color: var(--vermillion); }
+        .record-item .r1 { display: flex; justify-content: space-between; color: var(--ink-light); }
+        .record-item .r2 { color: var(--ink); margin-top: 0.2rem; }
+        .record-item .r3 { color: var(--ink-faint); font-size: 0.78rem; margin-top: 0.15rem; }
+        .empty-hint { color: var(--ink-faint); font-size: 0.83rem; padding: 0.5rem 0; }
+
+        .right-panel {
+            grid-column: 2;
+            min-width: 0;
+            background: var(--paper-card);
+            border: 1px solid var(--border-light);
+            border-radius: var(--radius-md);
+            box-shadow: var(--shadow-sm);
+            padding: 1.6rem 1.8rem 2rem;
+        }
+
+        .alert-error {
+            background: rgba(192,64,58,0.08);
+            border: 1px solid var(--vermillion);
+            color: var(--vermillion);
+            padding: 0.5rem 0.8rem;
+            border-radius: var(--radius-sm);
+            font-size: 0.85rem;
+            margin-bottom: 1rem;
+        }
+
+        /* 盘头 */
+        .pan-head {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: baseline;
+            gap: 0.35rem 0.95rem;
+            padding-bottom: 0.9rem;
+            border-bottom: 1px solid var(--border-light);
+            margin-bottom: 1.2rem;
+        }
+        .pan-head .school-tag {
+            font-size: 1.1rem;
+            color: var(--vermillion);
+            letter-spacing: 0.16em;
+            font-weight: 600;
+        }
+        .pan-head .meta { font-size: 0.83rem; color: var(--ink-light); letter-spacing: 0.04em; }
+        .pan-head .meta b { color: var(--ink); font-weight: 600; }
+        .pan-head .tag {
+            font-size: 0.78rem;
+            color: var(--gold-text);
+            border: 1px solid var(--gold);
+            border-radius: 10px;
+            padding: 0.08rem 0.5rem;
+            letter-spacing: 0.08em;
+        }
+
+        /* 六宫 / 三宫 */
+        .palm {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            grid-auto-rows: 1fr;
+            gap: 0.7rem;
+        }
+        .gong-cell {
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            min-height: 134px;
+            padding: 0.55rem 0.75rem 0.6rem;
+            border: 1px solid var(--wx-bd);
+            border-radius: var(--radius-md);
+            background: var(--wx-bg);
+            transition: box-shadow .2s;
+        }
+        .gong-cell.is-day, .gong-cell.is-hour { border-width: 2px; }
+        .gong-cell.is-day { border-color: var(--gold); }
+        .gong-cell.is-hour { border-color: var(--vermillion); }
+
+        .gc-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            gap: 0.4rem;
+            font-size: 0.72rem;
+            color: var(--ink-faint);
+            letter-spacing: 0.05em;
+        }
+        .gc-top .gc-shen { color: var(--ink-light); }
+        .gc-mid { text-align: center; }
+        .gc-name {
+            font-size: 1.45rem;
+            font-weight: 600;
+            letter-spacing: 0.12em;
+            line-height: 1.25;
+            color: var(--wx-fg);
+        }
+        .gc-lq { font-size: 0.8rem; color: var(--ink-light); margin-top: 0.1rem; letter-spacing: 0.08em; }
+        .gc-lq.self { color: var(--vermillion); }
+        .gc-zhi {
+            text-align: center;
+            font-size: 1rem;
+            letter-spacing: 0.1em;
+            color: var(--wx-fg);
+        }
+        .gc-zhi.plain { color: var(--ink-light); font-size: 0.86rem; }
+
+        /* 盘下标注 */
+        .gong-note {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: baseline;
+            gap: 0.4rem 1.6rem;
+            margin-top: 1.1rem;
+            font-size: 0.86rem;
+            color: var(--ink-light);
+            letter-spacing: 0.05em;
+        }
+        .gong-note b { font-weight: 600; color: var(--wx-fg, var(--ink)); }
+
+        /* 道传体用 */
+        .ty-box {
+            margin-top: 1.1rem;
+            border: 1px solid var(--border-ink);
+            border-radius: var(--radius-md);
+            padding: 0.9rem 1.1rem;
+            background: var(--surface-alt);
+        }
+        .ty-head {
+            font-size: 0.76rem;
+            letter-spacing: 0.2em;
+            color: var(--ink-faint);
+            margin-bottom: 0.55rem;
+        }
+        .ty-body {
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 0.55rem;
+            font-size: 0.9rem;
+        }
+        .ty-chip {
+            border: 1px solid var(--wx-bd, var(--border-ink));
+            background: var(--wx-bg, var(--surface));
+            border-radius: var(--radius-sm);
+            padding: 0.2rem 0.65rem;
+        }
+        .ty-chip b { color: var(--wx-fg, var(--ink)); font-weight: 600; }
+        .ty-arrow { color: var(--ink-faint); }
+        .ty-level {
+            margin-left: auto;
+            font-size: 1rem;
+            letter-spacing: 0.1em;
+        }
+        .ty-level.lv-good { color: #3f7d4e; }
+        .ty-level.lv-mid { color: var(--gold-text); }
+        .ty-level.lv-bad { color: var(--vermillion); }
+        .ty-note {
+            margin-top: 0.5rem;
+            font-size: 0.82rem;
+            color: var(--ink-light);
+            line-height: 1.8;
+        }
+
+        .chain { margin-top: 0.9rem; display: flex; flex-direction: column; gap: 0.45rem; }
+        .chain-item {
+            font-size: 0.85rem;
+            color: var(--ink-light);
+            padding: 0.45rem 0.8rem;
+            border: 1px dashed var(--border-ink);
+            border-radius: var(--radius-sm);
+        }
+
+        .notes {
+            margin-top: 1.8rem;
+            padding-top: 1rem;
+            border-top: 1px solid var(--border-light);
+            font-size: 0.78rem;
+            color: var(--ink-faint);
+            line-height: 2;
+        }
+        .notes b { color: var(--ink-light); font-weight: 600; }
+
+        @media (max-width: 1100px) {
+            .main-container {
+                grid-template-columns: minmax(0, 1fr);
+                justify-items: center;
+                padding: 0.8rem;
+            }
+            .left-panel,
+            .right-panel {
+                grid-column: 1;
+                justify-self: center;
+                width: 100%;
+            }
+            .left-panel { max-width: 480px; }
+            .right-panel { max-width: 680px; padding: 1.1rem; }
+        }
+
+        /* 掌位靠三指并排才有意义，窄屏不折列，改为等比缩小 */
+        @media (max-width: 520px) {
+            .right-panel { padding: 0.8rem 0.7rem 1rem; }
+            .palm { gap: 0.4rem; }
+            .gong-cell { min-height: 104px; padding: 0.4rem 0.35rem 0.45rem; }
+            .gc-top { font-size: 0.6rem; gap: 0.15rem; }
+            .gc-name { font-size: 1rem; letter-spacing: 0.04em; }
+            .gc-lq { font-size: 0.68rem; }
+            .gc-zhi { font-size: 0.82rem; }
+            .pan-head { gap: 0.35rem 0.8rem; }
+        }
+    </style>
+    <link rel="stylesheet" href="/static/css/tianji.css">
+    <script src="/static/js/tianji.js"></script>
+</head>
+<body>
+    {% include '_header.html' %}
+
+    <div class="main-container">
+        <aside class="left-panel">
+            <div class="panel-content">
+                {% if error %}<div class="alert-error">{{ error }}</div>{% endif %}
+
+                <div class="form-group">
+                    <label>流派</label>
+                    <div class="school-switch">
+                        {% for key, label in school_options.items() %}
+                        <a href="/xiaoliuren?school={{ key }}&date={{ date_value }}&time={{ time_value }}&method={{ method }}&numbers={{ numbers_str|urlencode }}"
+                           class="{{ 'active' if school == key else '' }}">{{ label }}小六壬</a>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <form method="GET" action="/xiaoliuren" id="qi-form">
+                    <input type="hidden" name="school" value="{{ school }}">
+                    <div class="form-group">
+                        <label>起课方式</label>
+                        <div class="method-switch">
+                            {% for key, label in method_options.items() %}
+                            <label>
+                                <input type="radio" name="method" value="{{ key }}"
+                                       {{ 'checked' if method == key else '' }}>
+                                <span>{{ label }}</span>
+                            </label>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>起课日期</label>
+                        <input type="date" name="date" value="{{ date_value }}" required>
+                    </div>
+                    <div class="form-group">
+                        <label>起课时刻</label>
+                        <input type="time" name="time" value="{{ time_value }}" required>
+                        <div class="field-hint" id="time-hint"></div>
+                    </div>
+                    <div class="form-group" id="num-group">
+                        <label>报数</label>
+                        <input type="text" name="numbers" value="{{ numbers_str }}"
+                               inputmode="numeric" autocomplete="off"
+                               placeholder="{% if need_count > 1 %}三个数，如 7 15 9{% else %}一个数，如 9{% endif %}">
+                        <div class="field-hint">
+                            {% if need_count > 1 %}
+                            一数定月宫、二数定日宫、三数定时宫，自大安起数、满六循环。
+                            {% else %}
+                            一数代「日」，除六取余定日宫；时宫仍由真实时辰起。
+                            {% endif %}
+                        </div>
+                    </div>
+                    <button type="submit" class="btn">起 课</button>
+                </form>
+
+                <div class="section-title">记 录</div>
+                <form method="POST" action="/xiaoliuren?school={{ school }}">
+                    <input type="hidden" name="date" value="{{ date_value }}">
+                    <input type="hidden" name="time" value="{{ time_value }}">
+                    <input type="hidden" name="method" value="{{ method }}">
+                    <input type="hidden" name="numbers" value="{{ numbers_str }}">
+                    <div class="form-group">
+                        <label>标的</label>
+                        <input type="text" name="subject" value="{{ subject }}" placeholder="所占何事">
+                    </div>
+                    <div class="form-group">
+                        <label>备注</label>
+                        <input type="text" name="remarks" value="{{ remarks }}" placeholder="可留空">
+                    </div>
+                    <button type="submit" class="btn ghost">保存此课</button>
+                </form>
+
+                <div class="section-title">最近记录</div>
+                <div class="record-list">
+                    {% for r in records %}
+                    <a class="record-item {{ 'current' if record_id == r.id else '' }}"
+                       href="/xiaoliuren?record_id={{ r.id }}">
+                        <div class="r1">
+                            <span>{{ r.school_label }}</span>
+                            <span>{{ r.time }}</span>
+                        </div>
+                        <div class="r2">{{ r.subject or '（未填标的）' }}</div>
+                        <div class="r3">{{ r.lunar }} {{ r.shichen }} · {{ r.summary }}</div>
+                    </a>
+                    {% else %}
+                    <div class="empty-hint">尚无记录</div>
+                    {% endfor %}
+                </div>
+            </div>
+        </aside>
+
+        <main class="right-panel">
+            <div class="pan-head">
+                <span class="school-tag">{{ xlr.school_label }}小六壬</span>
+                {% if xlr.method == 'number' %}
+                <span class="tag">报数 {{ xlr.numbers | join(' · ') }}</span>
+                {% endif %}
+                <span class="meta">农历 <b>{{ xlr.lunar_str }}</b> {{ xlr.shichen }}</span>
+                <span class="meta">{{ xlr.month_gz }}月 {{ xlr.day_gz }}日</span>
+                <span class="meta">{{ xlr.datetime_str }}</span>
+                {% if xlr.rolled %}<span class="tag">子时已换日</span>{% endif %}
+            </div>
+
+            {% if xlr.school == 'jiang' %}
+            <div class="palm">
+                {% for name in grid_order %}
+                    {% set c = xlr.gong | selectattr('name', 'equalto', name) | list | first %}
+                    <div class="gong-cell {{ 'is-day' if c.is_day else '' }} {{ 'is-hour' if c.is_hour else '' }}"
+                         data-wx="{{ c.palace_wx }}">
+                        <div class="gc-top">
+                            <span class="gc-shen">{{ c.shen }}</span>
+                            <span class="gc-star">{{ c.star }}</span>
+                        </div>
+                        <div class="gc-mid">
+                            <div class="gc-name">{{ c.name }}</div>
+                            <div class="gc-lq {{ 'self' if c.liuqin == '自身' else '' }}">{{ c.liuqin }}</div>
+                        </div>
+                        <div class="gc-zhi" data-wx="{{ c.zhi_wx }}" title="{{ c.zhi }}{{ c.zhi_wx }}">{{ c.zhi }}</div>
+                    </div>
+                {% endfor %}
+            </div>
+
+            <div class="gong-note">
+                <span>日宫 <b data-wx="{{ xlr.day_palace_wx }}">{{ xlr.day_palace }}</b></span>
+                <span>时宫 <b data-wx="{{ xlr.hour_palace_wx }}">{{ xlr.hour_palace }}</b>（身）</span>
+                <span>身支 <b data-wx="{{ xlr.body_wx }}">{{ xlr.body_zhi }}</b></span>
+                <span>自身 <b>{{ xlr.body_liuqin }}</b></span>
+            </div>
+
+            <div class="notes">
+                <b>取法</b>：{% if xlr.method == 'number' %}自大安起数，以报数除六取余定日宫{% else %}大安起初一顺数至农历日得日宫{% endif %}；
+                日宫起子时顺数至时辰得时宫（身宫）——时宫与地支、六亲、六神一概本于真实时辰，不因报数而改。
+                以时宫地支为准隔位（间一位）顺布十二支；六亲以身支五行论生克，
+                子午卯酉之身取第三宫为兄弟、寅申巳亥之身取第二宫为兄弟、辰戌丑未之身土土同类自明。
+                六神依「子午大安、丑未留连、寅申速喜、卯酉赤口、辰戌小吉、巳亥空亡」起青龙后顺排；
+                五星自日宫起木、火、土、金、水、天空。
+                {% if xlr.number_note %}<br><b>本课</b>：{{ xlr.number_note }}。{% endif %}
+            </div>
+
+            {% else %}
+            <div class="palm">
+                {% for c in xlr.gong3 %}
+                <div class="gong-cell" data-wx="{{ c.wx }}">
+                    <div class="gc-top">
+                        <span class="gc-shen">{{ c.shen }}</span>
+                        <span>{{ c.role }}</span>
+                    </div>
+                    <div class="gc-mid">
+                        <div class="gc-name">{{ c.name }}</div>
+                    </div>
+                    <div class="gc-zhi plain">{{ c.label }}{% if c.role == '人' %}（身）{% endif %}</div>
+                </div>
+                {% endfor %}
+            </div>
+
+            <div class="ty-box">
+                <div class="ty-head">体 用</div>
+                <div class="ty-body">
+                    <span class="ty-chip" data-wx="{{ xlr.ti.wx }}">体 · <b>{{ xlr.ti.name }}</b></span>
+                    <span class="ty-arrow">对</span>
+                    <span class="ty-chip" data-wx="{{ xlr.yong.wx }}">用 · <b>{{ xlr.yong.zhi }}</b>（起课时辰）</span>
+                    <span class="ty-arrow">→</span>
+                    <span class="ty-chip">{{ xlr.tiyong.rel }}</span>
+                    <span class="ty-level {{ 'lv-good' if '吉' in xlr.tiyong.level else 'lv-bad' }}">{{ xlr.tiyong.level }}</span>
+                </div>
+                <div class="ty-note">{{ xlr.tiyong.note }}</div>
+            </div>
+
+            <div class="chain">
+                {% for ch in xlr.chain %}
+                <div class="chain-item">{{ ch.text }}</div>
+                {% endfor %}
+            </div>
+
+            <div class="notes">
+                <b>取法</b>：{% if xlr.method == 'number' %}报三数依次定月宫、日宫、时宫（自大安起数，满六循环）{% else %}大安起正月顺数至农历月得月宫（天）；月宫起初一顺数至农历日得日宫（地）；
+                日宫起子时顺数至时辰得时宫（人）{% endif %}。三宫观生克为助为制；
+                体用取「落宫为体、时辰为用」，用克体大凶、体生用小凶、用生体大吉、体克用小吉，同气为比和。
+                {% if xlr.number_note %}<br><b>本课</b>：{{ xlr.number_note }}。{% endif %}
+            </div>
+            {% endif %}
+        </main>
+    </div>
+
+    <script>
+        function syncMethod() {
+            var el = document.querySelector('input[name="method"]:checked');
+            var v = el ? el.value : 'time';
+            var g = document.getElementById('num-group');
+            if (g) g.classList.toggle('on', v === 'number');
+            var hint = document.getElementById('time-hint');
+            if (hint) {
+                hint.textContent = v === 'number'
+                    ? '数字起课仍需真实时刻：以此定时辰、时宫与体用之「用」'
+                    : '';
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', function () {
+            document.querySelectorAll('input[name="method"]').forEach(function (r) {
+                r.addEventListener('change', syncMethod);
+            });
+            syncMethod();
+        });
+    </script>
+</body>
+</html>

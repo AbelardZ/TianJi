@@ -1,0 +1,732 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>天机系统 · 大六壬</title>
+    <style>
+        :root {
+            --ink: #2c2c2c;
+            --ink-light: #5a5a5a;
+            --ink-faint: #999;
+            --paper: #f5f0e8;
+            --paper-card: #faf7f0;
+            --paper-dark: #ebe4d5;
+            --vermillion: #c0403a;
+            --gold: #b8963e;
+            --gold-text: #8b6914;
+            --border-ink: #d4cbb8;
+            --border-light: #e5ddd0;
+            --shadow-sm: 0 2px 8px rgba(60,30,10,0.06);
+            --shadow-md: 0 4px 16px rgba(60,30,10,0.08);
+            --radius-sm: 4px;
+            --radius-md: 8px;
+            --radius-lg: 12px;
+            --surface: #fffef9;
+            --surface-alt: #fdf8f0;
+        }
+        [data-theme="dark"] {
+            --ink: #e8e2d5;
+            --ink-light: #b9b1a4;
+            --ink-faint: #8a8377;
+            --paper: #1c1a18;
+            --paper-card: #262320;
+            --paper-dark: #1f1d1a;
+            --vermillion: #c95151;
+            --gold: #c9a850;
+            --gold-text: #d4b85c;
+            --border-ink: #45403a;
+            --border-light: #38332e;
+            --surface: #302b27;
+            --surface-alt: #2a2622;
+        }
+
+        /* 五行语义色：与全站盘面同源，深浅色各一套 */
+        [data-wx="木"] { --wx-bg: #e8f2e9; --wx-bd: #bcd9c3; --wx-fg: #2b6a3e; }
+        [data-wx="火"] { --wx-bg: #fcebe8; --wx-bd: #f0c8c1; --wx-fg: #a6332c; }
+        [data-wx="土"] { --wx-bg: #f8efd9; --wx-bd: #e4d2a8; --wx-fg: #8a6520; }
+        [data-wx="金"] { --wx-bg: #f4f2ec; --wx-bd: #d8d3c6; --wx-fg: #6a6455; }
+        [data-wx="水"] { --wx-bg: #e2ecf8; --wx-bd: #b6cbe4; --wx-fg: #1d4a75; }
+        [data-theme="dark"] [data-wx="木"] { --wx-bg: #1f2e21; --wx-bd: #35503a; --wx-fg: #7fb884; }
+        [data-theme="dark"] [data-wx="火"] { --wx-bg: #31211f; --wx-bd: #5a3733; --wx-fg: #d98178; }
+        [data-theme="dark"] [data-wx="土"] { --wx-bg: #2e2718; --wx-bd: #4d4128; --wx-fg: #c9a86b; }
+        [data-theme="dark"] [data-wx="金"] { --wx-bg: #2b2b28; --wx-bd: #494946; --wx-fg: #d0cec4; }
+        [data-theme="dark"] [data-wx="水"] { --wx-bg: #182430; --wx-bd: #2b415a; --wx-fg: #85addb; }
+
+        * { box-sizing: border-box; }
+        body {
+            margin: 0;
+            font-family: "Noto Serif SC", "SimSun", "STZhongsong", serif;
+            background: var(--paper);
+            color: var(--ink);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            transition: background-color .3s, color .3s;
+        }
+
+        /* 左右留白对称，盘面落在屏幕正中 */
+        .main-container {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) minmax(0, 820px) minmax(0, 1fr);
+            flex: 1;
+            gap: 1.2rem;
+            padding: 1.2rem;
+            max-width: 1600px;
+            margin: 0 auto;
+            width: 100%;
+            align-items: start;
+        }
+        .left-panel {
+            grid-column: 1;
+            justify-self: end;
+            width: 100%;
+            max-width: 350px;
+            background: var(--paper-card);
+            border: 1px solid var(--border-light);
+            border-radius: var(--radius-md);
+            box-shadow: var(--shadow-sm);
+        }
+        .panel-content { padding: 1.35rem 1.3rem 1.2rem; }
+        .right-panel {
+            grid-column: 2;
+            background: var(--paper-card);
+            border: 1px solid var(--border-light);
+            border-radius: var(--radius-md);
+            box-shadow: var(--shadow-sm);
+            padding: 1.5rem 1.6rem 1.8rem;
+        }
+
+        .panel-title {
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+            margin: 0 0 0.9rem;
+            font-size: 0.95rem;
+            font-weight: 700;
+            letter-spacing: 0.18em;
+            color: var(--ink);
+        }
+        .panel-title::after {
+            content: "";
+            flex: 1;
+            height: 1px;
+            background: linear-gradient(90deg, var(--border-ink), transparent);
+        }
+        .panel-title:not(:first-child) { margin-top: 1.5rem; }
+
+        .field { margin-bottom: 0.7rem; }
+        .field > label, .opt-grid label {
+            display: block;
+            font-size: 0.78rem;
+            color: var(--ink-light);
+            margin-bottom: 0.28rem;
+            letter-spacing: 0.04em;
+        }
+        input[type="date"], input[type="time"], input[type="text"],
+        input[type="number"], select, textarea {
+            width: 100%;
+            padding: 0.45rem 0.6rem;
+            font-family: inherit;
+            font-size: 0.86rem;
+            color: var(--ink);
+            background: var(--surface);
+            border: 1px solid var(--border-ink);
+            border-radius: var(--radius-sm);
+            outline: none;
+            transition: border-color .2s, box-shadow .2s;
+        }
+        textarea { resize: vertical; line-height: 1.7; }
+        input:focus, select:focus, textarea:focus {
+            border-color: var(--gold);
+            box-shadow: 0 0 0 2px rgba(184, 150, 62, 0.14);
+        }
+        .required { color: var(--vermillion); font-style: normal; }
+        .hint { font-size: 0.72rem; color: var(--ink-faint); line-height: 1.7; margin: 0.1rem 0 0; }
+
+        .seg { display: flex; gap: 0.4rem; margin-bottom: 0.9rem; }
+        .seg label {
+            flex: 1;
+            text-align: center;
+            padding: 0.45rem 0.2rem;
+            font-size: 0.8rem;
+            border: 1px solid var(--border-ink);
+            border-radius: 999px;
+            color: var(--ink-light);
+            cursor: pointer;
+            transition: all .2s;
+        }
+        .seg input { position: absolute; opacity: 0; pointer-events: none; }
+        .seg label.on {
+            background: var(--vermillion);
+            border-color: var(--vermillion);
+            color: #fff8ec;
+        }
+        .field-pair { display: grid; grid-template-columns: 1fr 1fr; gap: 0.55rem; }
+
+        details.opts, details.basis {
+            border: 1px solid var(--border-light);
+            border-radius: var(--radius-md);
+            background: var(--surface-alt);
+            margin: 0.55rem 0 0.9rem;
+        }
+        details.opts summary, details.basis summary {
+            cursor: pointer;
+            padding: 0.6rem 0.8rem;
+            font-size: 0.82rem;
+            font-weight: 600;
+            letter-spacing: 0.08em;
+            color: var(--ink-light);
+            list-style: none;
+        }
+        details.opts summary::-webkit-details-marker,
+        details.basis summary::-webkit-details-marker { display: none; }
+        details.opts summary::before, details.basis summary::before {
+            content: "▸";
+            display: inline-block;
+            margin-right: 0.45rem;
+            color: var(--gold-text);
+            transition: transform .2s;
+        }
+        details[open] > summary::before { transform: rotate(90deg); }
+        .opt-grid { padding: 0 0.8rem 0.85rem; display: grid; gap: 0.55rem; }
+
+        .btn {
+            width: 100%;
+            padding: 0.55rem 0.8rem;
+            font-family: inherit;
+            font-size: 0.86rem;
+            letter-spacing: 0.14em;
+            color: var(--surface);
+            background: var(--vermillion);
+            border: 1px solid var(--vermillion);
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            transition: filter .2s, transform .2s;
+        }
+        .btn:hover { filter: brightness(1.08); transform: translateY(-1px); }
+        .btn.ghost {
+            color: var(--ink-light);
+            background: transparent;
+            border-color: var(--border-ink);
+        }
+        .btn.ghost:hover { color: var(--vermillion); border-color: var(--vermillion); }
+        .btn-row { display: flex; gap: 0.5rem; margin-top: 0.5rem; }
+        .alert-error {
+            margin: 0 0 0.8rem;
+            padding: 0.5rem 0.7rem;
+            border: 1px solid var(--vermillion);
+            border-radius: var(--radius-sm);
+            background: rgba(192, 64, 58, 0.08);
+            color: var(--vermillion);
+            font-size: 0.8rem;
+        }
+
+        .search-form { display: flex; gap: 0.4rem; margin-bottom: 0.7rem; }
+        .search-form input { flex: 1; }
+        .search-form .btn { width: auto; padding: 0.45rem 0.8rem; }
+        .rec-list { max-height: 290px; overflow-y: auto; }
+        .rec-item {
+            display: block;
+            text-decoration: none;
+            color: var(--ink);
+            padding: 0.55rem 0.65rem;
+            border: 1px solid transparent;
+            border-bottom: 1px solid var(--border-light);
+            border-radius: var(--radius-sm);
+            transition: background-color .2s, border-color .2s;
+        }
+        .rec-item:hover { background: var(--surface-alt); }
+        .rec-item.active {
+            border-color: var(--gold);
+            background: rgba(184, 150, 62, 0.09);
+        }
+        .rec-time { display: block; font-size: 0.7rem; color: var(--ink-faint); }
+        .rec-q { display: block; font-size: 0.82rem; margin: 0.12rem 0; }
+        .rec-line { display: block; font-size: 0.72rem; color: var(--ink-light); }
+        .rec-empty { font-size: 0.78rem; color: var(--ink-faint); text-align: center; padding: 0.9rem 0; }
+
+        /* ---------- 右栏：课式 ---------- */
+        .pan-head { text-align: center; margin-bottom: 1.2rem; }
+        .pan-head .title {
+            font-family: 'Kaiti', 'STKaiti', 'KaiTi', serif;
+            font-size: 1.6rem;
+            font-weight: 700;
+            letter-spacing: 0.35em;
+            text-indent: 0.35em;
+            color: var(--vermillion);
+            margin: 0 0 0.35rem;
+        }
+        .pan-head .rule {
+            display: flex; align-items: center; justify-content: center;
+            gap: 0.7rem; width: min(320px, 70%); margin: 0.5rem auto 0.7rem;
+        }
+        .pan-head .rule span { flex: 1; height: 1px; background: linear-gradient(90deg, transparent, var(--border-ink)); }
+        .pan-head .rule span:last-child { background: linear-gradient(90deg, var(--border-ink), transparent); }
+        .pan-head .rule i { width: 5px; height: 5px; transform: rotate(45deg); background: var(--gold); }
+        .pan-meta { font-size: 0.82rem; color: var(--ink-light); letter-spacing: 0.06em; line-height: 1.9; }
+        .pan-meta b { color: var(--ink); font-weight: 600; }
+        .pan-meta .keti { color: var(--vermillion); font-weight: 700; }
+
+        .pan-grid {
+            display: grid;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            grid-template-rows: repeat(4, minmax(88px, auto));
+            gap: 6px;
+            margin: 0 auto 1.35rem;
+            max-width: 620px;
+        }
+        .pan-cell {
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 0.15rem;
+            padding: 0.35rem 0.2rem;
+            background: var(--wx-bg);
+            border: 1px solid var(--wx-bd);
+            border-radius: var(--radius-sm);
+            color: var(--wx-fg);
+            transition: transform .2s, box-shadow .2s;
+        }
+        .pan-cell:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); }
+        .cell-jiang {
+            position: absolute; top: 0.25rem; right: 0.32rem;
+            font-size: 0.63rem; letter-spacing: 0.02em;
+            color: var(--ink-light); opacity: 0.9;
+        }
+        .cell-jiang.ji { color: var(--gold-text); }
+        .cell-main { display: flex; align-items: baseline; gap: 0.1rem; line-height: 1.15; }
+        .cell-dun { font-size: 0.72rem; opacity: 0.82; }
+        .cell-zhi { font-family: 'Kaiti', 'STKaiti', serif; font-size: 1.55rem; font-weight: 700; }
+        .cell-foot { font-size: 0.65rem; opacity: 0.78; letter-spacing: 0.05em; }
+        .cell-gong { display: inline-block; margin-left: 0.25rem; padding-left: 0.25rem; border-left: 1px solid currentColor; }
+        .cell-tags { position: absolute; left: 0.3rem; top: 0.28rem; display: flex; gap: 0.15rem; }
+        .cell-tags i, .chuan-tags i {
+            font-style: normal; font-size: 0.58rem; line-height: 1.3;
+            padding: 0 2px; border: 1px solid currentColor; border-radius: 2px;
+        }
+        .pan-center {
+            grid-row: 2 / 4; grid-column: 2 / 4;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            text-align: center; gap: 0.3rem;
+            background: var(--surface-alt);
+            border: 1px dashed var(--border-ink);
+            border-radius: var(--radius-sm);
+            padding: 0.6rem;
+        }
+        .pan-center .seal {
+            width: 40px; height: 40px; display: flex; align-items: center; justify-content: center;
+            font-family: 'Kaiti', 'STKaiti', serif; font-size: 1.35rem;
+            color: #fff8ec; background: var(--vermillion); border-radius: 6px;
+            transform: rotate(-4deg); margin-bottom: 0.2rem;
+        }
+        .pan-center .big { font-size: 0.9rem; font-weight: 700; letter-spacing: 0.1em; color: var(--ink); }
+        .pan-center .small { font-size: 0.7rem; color: var(--ink-light); line-height: 1.7; }
+
+        .block { margin-top: 1.25rem; }
+        .block-title {
+            display: flex; align-items: center; gap: 0.6rem;
+            font-size: 0.88rem; font-weight: 700; letter-spacing: 0.2em;
+            color: var(--ink); margin-bottom: 0.65rem;
+        }
+        .block-title::after { content: ""; flex: 1; height: 1px; background: var(--border-light); }
+        .ke-row { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0.55rem; }
+        .chuan-row { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.6rem; }
+        .ke-card, .chuan-card {
+            background: var(--wx-bg);
+            border: 1px solid var(--wx-bd);
+            border-radius: var(--radius-md);
+            color: var(--ink);
+            padding: 0.7rem 0.55rem;
+            text-align: center;
+        }
+        .ke-card .k-label, .chuan-card .c-pos {
+            font-size: 0.68rem; letter-spacing: 0.08em; color: var(--ink-light);
+            margin-bottom: 0.4rem;
+        }
+        .ke-card .k-jiang, .chuan-card .c-jiang {
+            font-size: 0.7rem; color: var(--gold-text); margin-bottom: 0.15rem;
+        }
+        .ke-card .k-zhi, .chuan-card .c-zhi {
+            font-family: 'Kaiti', 'STKaiti', serif;
+            font-size: 1.5rem; font-weight: 700; color: var(--wx-fg); line-height: 1.25;
+        }
+        .ke-card .k-dun, .chuan-card .c-dun { font-size: 0.78rem; color: var(--wx-fg); margin-right: 0.1rem; }
+        .ke-card .k-rel {
+            display: inline-block; margin: 0.3rem 0;
+            font-size: 0.65rem; padding: 0.05rem 0.4rem;
+            border: 1px solid var(--border-ink); border-radius: 999px;
+            color: var(--ink-light);
+        }
+        .ke-card .k-rel.zei { color: var(--vermillion); border-color: var(--vermillion); }
+        .ke-card .k-rel.ke { color: var(--gold-text); border-color: var(--gold); }
+        .ke-card .k-down {
+            font-family: 'Kaiti', 'STKaiti', serif; font-size: 1.05rem;
+            color: var(--ink); border-top: 1px solid var(--wx-bd); padding-top: 0.3rem;
+        }
+        .ke-card .k-meta, .chuan-card .c-meta {
+            font-size: 0.67rem; color: var(--ink-light); margin-top: 0.35rem; line-height: 1.6;
+        }
+        .chuan-card { padding: 0.85rem 0.55rem; }
+        .chuan-card .c-zhi { font-size: 1.75rem; }
+        .chuan-tags { display: flex; justify-content: center; gap: 0.25rem; margin-top: 0.35rem; color: var(--vermillion); min-height: 1rem; }
+
+        details.basis { margin-top: 1.35rem; }
+        details.basis summary { font-size: 0.85rem; color: var(--ink); }
+        details.basis summary span { float: right; font-size: 0.72rem; color: var(--vermillion); font-weight: 400; }
+        .basis-body { padding: 0 0.9rem 0.95rem; font-size: 0.79rem; line-height: 1.95; color: var(--ink-light); }
+        .basis-body p { margin: 0.3rem 0; }
+        .basis-body strong { color: var(--ink); }
+        .basis-body ul { margin: 0.4rem 0 0.6rem; padding-left: 1.2rem; }
+        .basis-body li { margin-bottom: 0.25rem; }
+        .basis-quote { color: var(--gold-text); font-style: italic; }
+        .legend { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 0.2rem 0.9rem; margin-top: 0.5rem; font-size: 0.72rem; }
+        .legend b { color: var(--ink); font-weight: 600; }
+
+        .foot-note { text-align: center; font-size: 0.72rem; color: var(--ink-faint); margin-top: 1.3rem; letter-spacing: 0.1em; }
+
+        @media (max-width: 1100px) {
+            .main-container { grid-template-columns: minmax(0, 1fr); }
+            .left-panel { grid-column: 1; justify-self: stretch; max-width: none; }
+            .right-panel { grid-column: 1; }
+            .rec-list { max-height: 220px; }
+        }
+        @media (max-width: 560px) {
+            .main-container { padding: 0.7rem; gap: 0.7rem; }
+            .right-panel { padding: 1.1rem 0.8rem 1.3rem; }
+            .pan-grid { grid-template-rows: repeat(4, minmax(68px, auto)); gap: 4px; }
+            .cell-zhi { font-size: 1.2rem; }
+            .cell-foot { font-size: 0.57rem; }
+            .cell-jiang { font-size: 0.56rem; right: 0.2rem; }
+            .pan-center .seal { width: 32px; height: 32px; font-size: 1.05rem; }
+            .pan-center .big { font-size: 0.78rem; }
+            .pan-center .small { font-size: 0.62rem; }
+            .ke-row { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+            .chuan-row { gap: 0.35rem; }
+            .chuan-card .c-zhi { font-size: 1.35rem; }
+            .pan-head .title { font-size: 1.3rem; }
+        }
+    </style>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/tianji.css') }}">
+    <script src="{{ url_for('static', filename='js/tianji.js') }}" defer></script>
+</head>
+<body>
+    {% include '_header.html' %}
+
+    <main class="main-container">
+        <aside class="left-panel">
+            <div class="panel-content">
+                {% if error %}<div class="alert-error">{{ error }}</div>{% endif %}
+
+                <h2 class="panel-title">起 课</h2>
+                <form id="qi-form" method="get" action="/daliuren">
+                    <div class="seg">
+                        <label class="{{ 'on' if params.method == 'time' else '' }}" data-method="time">
+                            <input type="radio" name="method" value="time" {{ 'checked' if params.method == 'time' }}>正时起课
+                        </label>
+                        <label class="{{ 'on' if params.method == 'manual' else '' }}" data-method="manual">
+                            <input type="radio" name="method" value="manual" {{ 'checked' if params.method == 'manual' }}>手动指定
+                        </label>
+                    </div>
+                    <div class="field-pair">
+                        <div class="field"><label>日期</label><input type="date" name="date" value="{{ date_value }}"></div>
+                        <div class="field"><label>时间</label><input type="time" name="time" value="{{ time_value }}"></div>
+                    </div>
+
+                    <div id="manual-fields" style="{{ 'display:block' if params.method == 'manual' else 'display:none' }}">
+                        <div class="field-pair">
+                            <div class="field">
+                                <label>日干</label>
+                                <select name="day_gan">{% for g in gan_options %}<option value="{{ g }}" {{ 'selected' if g == params.manual.day_gan }}>{{ g }}</option>{% endfor %}</select>
+                            </div>
+                            <div class="field">
+                                <label>日支</label>
+                                <select name="day_zhi">{% for z in zhi_options %}<option value="{{ z }}" {{ 'selected' if z == params.manual.day_zhi }}>{{ z }}</option>{% endfor %}</select>
+                            </div>
+                        </div>
+                        <div class="field-pair">
+                            <div class="field">
+                                <label>占时</label>
+                                <select name="shichen">{% for z in zhi_options %}<option value="{{ z }}" {{ 'selected' if z == params.manual.shichen }}>{{ z }}</option>{% endfor %}</select>
+                            </div>
+                            <div class="field">
+                                <label>月将</label>
+                                <select name="yuejiang">{% for z in zhi_options %}<option value="{{ z }}" {{ 'selected' if z == params.manual.yuejiang }}>{{ z }}</option>{% endfor %}</select>
+                            </div>
+                        </div>
+                        <p class="hint">手动指定用于复盘只给「某日某将某时」的古籍课例；此时真实时刻仅作记录。</p>
+                    </div>
+
+                    <details class="opts" id="optPanel">
+                        <summary>起课设置 · 流派与历法</summary>
+                        <div class="opt-grid">
+                            <label>月将换将
+                                <select name="yuejiang_rule">{% for r in yuejiang_rules %}<option value="{{ r }}" {{ 'selected' if r == params.yuejiang_rule }}>{{ r }}{% if r == '中气' %}（雨水亥将…）{% else %}（清明酉将…）{% endif %}</option>{% endfor %}</select>
+                            </label>
+                            <label>天乙贵人
+                                <select name="noble_rule">{% for r in noble_rules %}<option value="{{ r }}" {{ 'selected' if r == params.noble_rule }}>{{ r }}{% if r == '通行' %}（甲戊庚牛羊）{% else %}（袁树珊《探原》）{% endif %}</option>{% endfor %}</select>
+                            </label>
+                            <label>涉害取用
+                                <select name="shehai_rule">{% for r, desc in shehai_rules.items() %}<option value="{{ r }}" {{ 'selected' if r == params.shehai_rule }}>{{ r }}</option>{% endfor %}</select>
+                            </label>
+                            <label>当地东经（留空＝北京时间）
+                                <input type="number" name="longitude" step="0.1" min="-180" max="180" value="{{ params.longitude if params.longitude is not none else '' }}" placeholder="如 118.8">
+                            </label>
+                            <div class="field-pair">
+                                <label>均时差
+                                    <select name="eot"><option value="1" {{ 'selected' if params.eot }}>叠加</option><option value="0" {{ 'selected' if not params.eot }}>不叠加</option></select>
+                                </label>
+                                <label>23 点换日
+                                    <select name="late_zi"><option value="1" {{ 'selected' if params.late_zi }}>启用</option><option value="0" {{ 'selected' if not params.late_zi }}>关闭</option></select>
+                                </label>
+                            </div>
+                            <p class="hint">涉害「计害」依《六壬大全·观月经》涉归本家数受克；「孟仲季」为邵彦和、陈公献一系简法，两者在部分课例上取用不同。</p>
+                        </div>
+                    </details>
+                    <input type="hidden" name="q" value="{{ search_q }}">
+                    <button class="btn" type="submit">起 课</button>
+                </form>
+
+                {% if not record_id %}
+                <h2 class="panel-title">保存此盘</h2>
+                <form id="save-form" method="post" action="/daliuren">
+                    <input type="hidden" name="date" value="{{ date_value }}">
+                    <input type="hidden" name="time" value="{{ time_value }}">
+                    <input type="hidden" name="method" value="{{ params.method }}">
+                    <input type="hidden" name="day_gan" value="{{ params.manual.day_gan }}">
+                    <input type="hidden" name="day_zhi" value="{{ params.manual.day_zhi }}">
+                    <input type="hidden" name="shichen" value="{{ params.manual.shichen }}">
+                    <input type="hidden" name="yuejiang" value="{{ params.manual.yuejiang }}">
+                    <input type="hidden" name="yuejiang_rule" value="{{ params.yuejiang_rule }}">
+                    <input type="hidden" name="noble_rule" value="{{ params.noble_rule }}">
+                    <input type="hidden" name="shehai_rule" value="{{ params.shehai_rule }}">
+                    <input type="hidden" name="longitude" value="{{ params.longitude if params.longitude is not none else '' }}">
+                    <input type="hidden" name="eot" value="{{ '1' if params.eot else '0' }}">
+                    <input type="hidden" name="late_zi" value="{{ '1' if params.late_zi else '0' }}">
+                    <div class="field">
+                        <label>问事 <em class="required">* 必填</em></label>
+                        <textarea name="question" rows="2" required placeholder="如：本月能否签下 A 项目合同？">{{ question }}</textarea>
+                    </div>
+                    <div class="field"><label>标的 / 姓名</label><input type="text" name="subject" value="{{ subject }}" placeholder="如：张某、A 项目"></div>
+                    <div class="field"><label>标签</label><input type="text" name="tags" value="{{ tags }}" placeholder="逗号分隔"></div>
+                    <div class="field"><label>备注</label><textarea name="remarks" rows="2">{{ remarks }}</textarea></div>
+                    <button class="btn" type="submit">保存此盘</button>
+                </form>
+                {% else %}
+                <h2 class="panel-title">编辑本条记录</h2>
+                <div class="field">
+                    <label>问事 <em class="required">* 必填</em></label>
+                    <textarea id="editQuestion" rows="2" required>{{ question }}</textarea>
+                </div>
+                <div class="field"><label>标的 / 姓名</label><input type="text" id="editSubject" value="{{ subject }}"></div>
+                <div class="field"><label>标签</label><input type="text" id="editTags" value="{{ tags }}"></div>
+                <div class="field"><label>备注</label><textarea id="editRemarks" rows="2">{{ remarks }}</textarea></div>
+                <div class="btn-row">
+                    <button class="btn" type="button" id="updateBtn">保存修改</button>
+                    <a class="btn ghost" href="/daliuren" style="text-align:center; text-decoration:none;">另起一课</a>
+                </div>
+                <div class="btn-row"><button class="btn ghost" type="button" id="deleteBtn">删除记录</button></div>
+                {% endif %}
+
+                <div class="btn-row" style="margin-top:0.9rem">
+                    <button class="btn ghost" type="button" id="basisBtn">盘面依据</button>
+                </div>
+
+                <h2 class="panel-title">历史记录</h2>
+                <form class="search-form" method="get" action="/daliuren">
+                    <input type="text" name="q" value="{{ search_q }}" placeholder="搜索问事 / 课体 / 三传">
+                    <button class="btn" type="submit">搜索</button>
+                </form>
+                <div class="rec-list">
+                    {% for r in records %}
+                    <a class="rec-item {{ 'active' if record_id == r.id }}" href="/daliuren?record_id={{ r.id }}{% if search_q %}&q={{ search_q|urlencode }}{% endif %}">
+                        <span class="rec-time">{{ r.time }} · {{ r.method_label }}</span>
+                        <span class="rec-q">问：{{ r.question or '（未记）' }}</span>
+                        <span class="rec-line">{{ r.day_gz }} · {{ r.keti }} · {{ r.chuan }}</span>
+                    </a>
+                    {% else %}
+                    <div class="rec-empty">暂无记录</div>
+                    {% endfor %}
+                </div>
+            </div>
+        </aside>
+
+        <section class="right-panel">
+            <div class="pan-head">
+                <h1 class="title">大 六 壬</h1>
+                <div class="rule" aria-hidden="true"><span></span><i></i><span></span></div>
+                <div class="pan-meta">
+                    <b>{{ pan.day_gz }}</b> 日 · {{ pan.shichen }} 时 · {{ pan.yuejiang }} 将（{{ pan.yuejiang_name }}）
+                    · 干寄 <b>{{ pan.ji_gong }}</b> · {{ pan.pan_type }}盘<br>
+                    课体 <span class="keti">{{ pan.keti }}</span> · {{ pan.zongmen }} ·
+                    旬首 {{ pan.xunshou }} · 旬空 {{ pan.kong|join('、') }}
+                </div>
+            </div>
+
+            <div class="pan-grid" id="panGrid">
+                {% set layout = [
+                    ('巳', 1, 1), ('午', 1, 2), ('未', 1, 3), ('申', 1, 4),
+                    ('辰', 2, 1), ('酉', 2, 4),
+                    ('卯', 3, 1), ('戌', 3, 4),
+                    ('寅', 4, 1), ('丑', 4, 2), ('子', 4, 3), ('亥', 4, 4)
+                ] %}
+                {% for gong, row, col in layout %}
+                {% set c = pan.cells_by_gong[gong] %}
+                <div class="pan-cell" data-wx="{{ c.wx }}" style="grid-row:{{ row }}; grid-column:{{ col }}"
+                     title="{{ c.jiang }}（{{ c.jiang_desc }}） · {{ c.liuqin }} · 地盘 {{ gong }}宫">
+                    <div class="cell-tags">
+                        {% if c.kong %}<i>空</i>{% endif %}{% if c.ma %}<i>马</i>{% endif %}{% if c.lu %}<i>禄</i>{% endif %}
+                    </div>
+                    <span class="cell-jiang {{ 'ji' if c.jiang_ji }}">{{ c.jiang }}</span>
+                    <div class="cell-main"><span class="cell-dun">{{ c.dun }}</span><span class="cell-zhi">{{ c.zhi }}</span></div>
+                    <div class="cell-foot">{{ c.shen }}<span class="cell-gong">{{ gong }}</span></div>
+                </div>
+                {% endfor %}
+                <div class="pan-center" style="grid-row:2/4; grid-column:2/4">
+                    <div class="seal">壬</div>
+                    <div class="big">{{ pan.yuejiang }}将加{{ pan.shichen }}时</div>
+                    <div class="small">{{ pan.keti }}<br>{{ pan.zongmen }}发用<br>天将{{ '顺' if pan.noble.shun else '逆' }}布</div>
+                </div>
+            </div>
+
+            <div class="block">
+                <div class="block-title">四 课</div>
+                <div class="ke-row">
+                    {% for k in pan.kes %}
+                    <div class="ke-card" data-wx="{{ k.info.wx }}" title="{{ k.info.jiang_desc }}">
+                        <div class="k-label">第 {{ k.no }} 课 · {{ k.label }}</div>
+                        <div class="k-jiang">{{ k.info.jiang }} · {{ k.info.shen }}</div>
+                        <div class="k-zhi"><span class="k-dun">{{ k.info.dun }}</span>{{ k.shang }}</div>
+                        <div class="k-rel {{ 'zei' if k.rel == '贼' else ('ke' if k.rel == '克' else '') }}">{{ k.rel_label }}</div>
+                        <div class="k-down">{{ k.xia }}</div>
+                        <div class="k-meta">{{ k.info.liuqin }} · {{ k.info.wx }}{% if k.info.kong %} · 旬空{% endif %}</div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <div class="block">
+                <div class="block-title">三 传</div>
+                <div class="chuan-row">
+                    {% for c in pan.chuans %}
+                    <div class="chuan-card" data-wx="{{ c.wx }}" title="{{ c.jiang_desc }}">
+                        <div class="c-pos">{{ c.pos }} · 临{{ c.gong }}宫</div>
+                        <div class="c-jiang">{{ c.jiang }}</div>
+                        <div class="c-zhi"><span class="c-dun">{{ c.dun }}</span>{{ c.zhi }}</div>
+                        <div class="c-meta">{{ c.liuqin }} · {{ c.wx }} · {{ c.shen }}</div>
+                        <div class="chuan-tags">
+                            {% if c.kong %}<i>空</i>{% endif %}{% if c.ma %}<i>马</i>{% endif %}{% if c.lu %}<i>禄</i>{% endif %}
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <details class="basis" id="basisPanel">
+                <summary>课体与取用依据 <span>{{ pan.keti }} · {{ pan.zongmen }}</span></summary>
+                <div class="basis-body">
+                    <p class="basis-quote">{{ pan.zongmen_info }}</p>
+                    <p><strong>发用</strong> · {{ pan.zongmen }} · {{ pan.qu_yong_note }}</p>
+                    <ul>
+                        {% for a in pan.advice %}<li>{{ a }}</li>{% endfor %}
+                    </ul>
+                    <p><strong>天将</strong> · {{ pan.noble.note }}；十二将自贵人起依次为 {{ tianjiang|join('、') }}。</p>
+                    <p><strong>取法</strong> · {{ pan.time_info.method_note }}；{{ pan.time_info.notes|join('；') }}。
+                       {% if pan.time_info.jieqi_at %}换将节气 {{ pan.time_info.jieqi_name }} 交于 {{ pan.time_info.jieqi_at }}。{% endif %}</p>
+                    {% if pan.time_info.four_pillars.year %}
+                    <p><strong>四柱</strong> · {{ pan.time_info.four_pillars.year }}
+                       {{ pan.time_info.four_pillars.month }}
+                       {{ pan.time_info.four_pillars.day }}
+                       {{ pan.time_info.four_pillars.time }}
+                       {% if pan.time_info.lunar_str %}（农历 {{ pan.time_info.lunar_str }}）{% endif %}</p>
+                    {% endif %}
+                    <p><strong>流派口径</strong> · 月将{{ pan.options.yuejiang_rule }}换将、贵人{{ pan.options.noble_rule }}口诀、涉害{{ pan.options.shehai_rule }}法。
+                       {{ shehai_rules[pan.options.shehai_rule] }}。</p>
+                    <div class="legend">
+                        {% for name, text in zongmen_info.items() %}<div><b>{{ name }}</b> · {{ text }}</div>{% endfor %}
+                    </div>
+                </div>
+            </details>
+
+            <p class="foot-note">以 數 觀 象 · 以 象 明 理</p>
+        </section>
+    </main>
+
+    <script>
+        (function () {
+            // 起课方式：切换手动指定区与胶囊按钮高亮
+            var radios = document.querySelectorAll('#qi-form input[name="method"]');
+            var manual = document.getElementById('manual-fields');
+            function syncMethod() {
+                var value = 'time';
+                radios.forEach(function (r) { if (r.checked) value = r.value; });
+                document.querySelectorAll('.seg label').forEach(function (l) {
+                    l.classList.toggle('on', l.getAttribute('data-method') === value);
+                });
+                if (manual) manual.style.display = value === 'manual' ? 'block' : 'none';
+            }
+            radios.forEach(function (r) { r.addEventListener('change', syncMethod); });
+            document.querySelectorAll('.seg label').forEach(function (l) {
+                l.addEventListener('click', function () {
+                    var r = l.querySelector('input');
+                    if (r) { r.checked = true; syncMethod(); }
+                });
+            });
+            syncMethod();
+
+            // 原生 required 校验兜底：避免脚本 submit 绕过
+            var saveForm = document.getElementById('save-form');
+            if (saveForm) {
+                saveForm.addEventListener('submit', function (e) {
+                    if (typeof saveForm.reportValidity === 'function' && !saveForm.reportValidity()) {
+                        e.preventDefault();
+                    }
+                });
+            }
+
+            // 盘面依据：展开并滚动到详情
+            document.getElementById('basisBtn').addEventListener('click', function () {
+                var d = document.getElementById('basisPanel');
+                d.open = true;
+                d.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            });
+
+            var recordId = {{ record_id if record_id else 'null' }};
+            var updateBtn = document.getElementById('updateBtn');
+            if (updateBtn) {
+                updateBtn.addEventListener('click', function () {
+                    var q = document.getElementById('editQuestion');
+                    if (!q.value.trim()) { q.focus(); q.reportValidity(); return; }
+                    fetch('/daliuren/update', {
+                        method: 'POST', headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            record_id: recordId, question: q.value.trim(),
+                            subject: document.getElementById('editSubject').value,
+                            tags: document.getElementById('editTags').value,
+                            remarks: document.getElementById('editRemarks').value
+                        })
+                    }).then(function (r) { return r.json(); }).then(function (res) {
+                        if (res.status === 'success') { window.location.reload(); }
+                        else { alert('保存失败：' + res.message); }
+                    }).catch(function () { alert('保存失败，请重试'); });
+                });
+            }
+            var deleteBtn = document.getElementById('deleteBtn');
+            if (deleteBtn) {
+                deleteBtn.addEventListener('click', function () {
+                    if (!confirm('确定删除这条记录？')) return;
+                    fetch('/daliuren/delete', {
+                        method: 'POST', headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ record_id: recordId })
+                    }).then(function (r) { return r.json(); }).then(function (res) {
+                        if (res.status === 'success') { window.location.href = '/daliuren'; }
+                        else { alert('删除失败：' + res.message); }
+                    }).catch(function () { alert('删除失败，请重试'); });
+                });
+            }
+        })();
+    </script>
+</body>
+</html>

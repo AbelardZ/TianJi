@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>系统记录 - 天机 六爻</title>
+    <title>天机系统 · 历史记录</title>
     <style>
         :root {
             /* Light Theme - Chinese Elegant */
@@ -36,13 +36,14 @@
             background-color: var(--bg-body);
             color: var(--text-main);
             margin: 0;
-            padding: 2rem;
+            padding: 0;
             min-height: 100vh;
         }
 
         .container {
             max-width: 1200px;
             margin: 0 auto;
+            padding: 2rem;
         }
 
         .header {
@@ -130,6 +131,8 @@
             min-width: 150px;
         }
 
+        .table-scroll { overflow-x: auto; border-radius: var(--radius-md); }
+
         .results-table {
             width: 100%;
             border-collapse: collapse;
@@ -156,18 +159,23 @@
         tr:last-child td { border-bottom: none; }
         tr:hover td { background-color: rgba(0,0,0,0.02); }
 
+        @media (max-width: 600px) { .container { padding: 1rem; } }
+
         .empty-state {
             text-align: center;
             padding: 3rem;
             color: var(--text-secondary);
         }
     </style>
+    <link rel="stylesheet" href="/static/css/tianji.css">
+    <script src="/static/js/tianji.js"></script>
 </head>
 <body>
+    {% include '_header.html' %}
     <div class="container">
         <div class="header">
             <h1>历史记录查询</h1>
-            <a href="/" class="btn">返回排盘</a>
+            <a href="/liuyao" class="btn">返回排盘</a>
         </div>
 
         <div class="search-card">
@@ -199,6 +207,7 @@
         </div>
 
         {% if results %}
+        <div class="table-scroll">
         <table class="results-table">
             <thead>
                 <tr>
@@ -240,6 +249,7 @@
                 {% endfor %}
             </tbody>
         </table>
+        </div>
         {% else %}
         <div class="empty-state">
             暂无数据，请尝试调整查询条件
@@ -247,11 +257,6 @@
         {% endif %}
     </div>
     <script>
-        // Simple theme init
-        if (localStorage.getItem('theme') === 'dark') {
-            document.body.setAttribute('data-theme', 'dark');
-        }
-
         function deleteHistoryRecordFromButton(button) {
             deleteHistoryRecord(button.dataset.year, button.dataset.id, button.dataset.subject);
         }

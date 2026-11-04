@@ -5,7 +5,30 @@ import sxtwl
 import unicodedata
 import io
 from datetime import datetime
-from data import gua64, cangyao64
+
+from .data import gua64, cangyao64
+
+# 五行基础表：用于装配变卦六亲（六亲必须依「本卦宫」五行，不取变卦自身之宫）
+WX_ZHI = {'子':'水','丑':'土','寅':'木','卯':'木','辰':'土','巳':'火',
+          '午':'火','未':'土','申':'金','酉':'金','戌':'土','亥':'水'}
+WX_GONG = {'乾':'金','兑':'金','离':'火','震':'木',
+           '巽':'木','坎':'水','艮':'土','坤':'土'}
+WX_SHENG = {'木':'火','火':'土','土':'金','金':'水','水':'木'}   # 我生
+WX_KE    = {'木':'土','土':'水','水':'火','火':'金','金':'木'}   # 我克
+
+
+def liuqin_of(gong_wx: str, zhi_wx: str) -> str:
+    """以卦宫五行为「我」，判定某一地支五行的六亲。"""
+    if gong_wx == zhi_wx:
+        return '兄弟'
+    if WX_SHENG[gong_wx] == zhi_wx:
+        return '子孙'
+    if WX_KE[gong_wx] == zhi_wx:
+        return '妻财'
+    if WX_KE[zhi_wx] == gong_wx:
+        return '官鬼'
+    return '父母'
+
 
 class liuyao:
     #六爻起卦与排盘主类。
@@ -17,8 +40,9 @@ class liuyao:
     #主要属性：
     #- ygua: 原始六爻（含 1/2/3/4，3=老阳，4=老阴），自下而上。
     #- gua: 主卦（将 3→1、4→2 后，仅含 1/2）。
-    #- dgua: 动爻记录 [位置, 变后值('1' 或 '2'), ...]，位置 0~5 自下而上。
-    #- guastr/bguastr: 主卦/变卦键（6 位字符串）。
+    #- dgua: 动爻记录 [位置, 主卦值('1' 或 '2'), ...]，位置 0~5 自下而上；
+    #        其值为**变动前**的阴阳（1=老阳动、2=老阴动），变卦由之翻转求得。
+    #- guastr/bguastr: 主卦/变卦键（6 位字符串，自下而上）。
     #- _paipan_time/_paipan_monthzhi/_paipan_monthgz/_paipan_day/_paipan_xunkong: 打印辅助缓存。
 
     def __init__(self):
@@ -137,14 +161,12 @@ class liuyao:
     def kongwang(self):
       
         #计算日空亡：
-        #规则：日支序号 - 日干序号 = 差值（若 <0 则 +10），
-        #空亡为 kongwangzu[差值-2] 与 kongwangzu[差值-1]。
+        #旬空首支的序号 = (日支序 - 日干序 + 10) mod 12（同为 1 基序号，差值对 12 取模）。
+        #必须取模 12：直接判断负数再加 10 会在「干序 > 支序」的日子少算两位，导致旬空错位。
         
-        cha = self.dizhi[self.ridi] - self.tiangan[self.ritian]
-        if cha < 0:
-            cha += 10
-        kw1 = self.kongwangzu[cha-2]
-        kw2 = self.kongwangzu[cha-1]
+        idx = (self.dizhi[self.ridi] - self.tiangan[self.ritian] + 10) % 12
+        kw1 = self.kongwangzu[idx]
+        kw2 = self.kongwangzu[(idx + 1) % 12]
         self._paipan_xunkong = f"{kw1}{kw2}"
 
     def paipan(self):
@@ -162,6 +184,54 @@ class liuyao:
                 self.dgua.append('2')
         self.guastr = ''.join(map(str, self.gua))
 
+    @staticmethod
+    def _bian_lines(bian_gua, ben_gong):
+        """装配变卦六爻的六亲。
+
+        依《增删卜易》「变爻六亲，仍依本宫」：变卦只提供纳甲地支，
+        六亲一律以本卦所属卦宫的五行判定，不取变卦自身之宫。
+        """
+        gong_wx = WX_GONG[ben_gong]
+        out = []
+        for yao in bian_gua[:6]:
+            # 条目格式为「六亲(2字) + 地支 + 五行」，如 '父母子水'
+            zhi = yao[2]
+            out.append(liuqin_of(gong_wx, WX_ZHI[zhi]) + yao[2:])
+        return out
+
+    def _bian_info(self):
+        """统一计算变卦：卦键、卦名、卦象标注、六亲爻及是否成卦。
+
+        静卦（无动爻）不立变卦，返回 active=False 且六爻留空。
+        """
+        main_gua = self.gua64[self.guastr]
+        ben_gong = main_gua[10].replace('宫', '')
+        bbgua = list(map(int, self.gua))
+        for i in range(0, len(self.dgua), 2):
+            idx = self.dgua[i]
+            # dgua[i+1] 为变动前的阴阳：老阳(1)变为阴，老阴(2)变为阳
+            if self.dgua[i + 1] == '1':
+                bbgua[idx] = 2
+            else:
+                bbgua[idx] = 1
+        self.bguastr = ''.join(map(str, bbgua))
+        if not self.dgua:
+            return {
+                'active': False,
+                'bbgua': bbgua,
+                'name': '六爻安静',
+                'detail': '',
+                'lines': [''] * 6,
+            }
+        bian_gua = self.gua64[self.bguastr]
+        return {
+            'active': True,
+            'bbgua': bbgua,
+            'name': f"{bian_gua[10].replace('宫','')}-{bian_gua[11]}",
+            'detail': f"({bian_gua[8]})" if bian_gua[8] else "",
+            'lines': self._bian_lines(bian_gua, ben_gong),
+        }
+
     def get_paipan_string(self):
         #生成完整的排盘文本（与 Console 版格式一致）。
         output = io.StringIO()
@@ -171,17 +241,11 @@ class liuyao:
         main_gua = self.gua64[self.guastr]
         main_gua_name = f"{main_gua[10].replace('宫','')}-{main_gua[11]}"
         hc = f"({main_gua[8]})" if main_gua[8] else ""
-        bbgua = list(map(int, self.gua))
-        for i in range(0, len(self.dgua), 2):
-            idx = self.dgua[i]
-            if self.dgua[i+1] == '1':
-                bbgua[idx] = 2
-            else:
-                bbgua[idx] = 1
-        self.bguastr = ''.join(map(str, bbgua))
-        bian_gua = self.gua64[self.bguastr]
-        bian_gua_name = f"{bian_gua[10].replace('宫','')}-{bian_gua[11]}"
-        hc2 = f"({bian_gua[8]})" if bian_gua[8] else ""
+        binfo = self._bian_info()
+        bbgua = binfo['bbgua']
+        bian_gua_name = binfo['name']
+        hc2 = binfo['detail']
+        bian_lines = binfo['lines']
         main_full = f"{main_gua_name}{hc}"
         main_fixed = self._truncate_disp(main_full, self._col_widths['zhugua'])
         main_padded = self._pad(main_fixed, self._col_widths['zhugua'])
@@ -193,8 +257,7 @@ class liuyao:
         liushen_list = [(liushen_start + i) % 6 for i in range(6)]
         dongyao = {}
         for i in range(0, len(self.dgua), 2):
-            # 与控制台一致：变后为 '1'（阳） => 原为老阴(4) 显示 〇→；
-            # 变后为 '2'（阴） => 原为老阳(3) 显示 ×→。
+            # 老阳动（主卦为阳）记 〇→；老阴动（主卦为阴）记 ×→
             dongyao[self.dgua[i]] = '〇→' if self.dgua[i+1] == '1' else '×→'
         header = (
             self._pad('六神', self._col_widths['liushen']) +
@@ -213,9 +276,12 @@ class liuyao:
             liushen = self.liushencn[liushen_list[i]]
             cangyao = cangyao_list[i] if i < len(cangyao_list) else ''
             zhuyao = '▅▅▅▅▅' if self.gua[i] == '1' else '▅▅  ▅▅'
-            bianyao = '▅▅▅▅▅' if str(bbgua[i]) == '1' else '▅▅  ▅▅'
+            if binfo['active']:
+                bianyao = '▅▅▅▅▅' if str(bbgua[i]) == '1' else '▅▅  ▅▅'
+            else:
+                bianyao = ''
             zhuyao_name = main_gua[i]
-            bianyao_name = bian_gua[i]
+            bianyao_name = bian_lines[i]
             # 动爻索引同样直接使用 i，确保标记落在正确行
             dong = dongyao.get(i, '')
             shi_ying = ('世' if (i + 1) == syw else '') + ('应' if (i + 1) == yyw else '')
@@ -244,17 +310,11 @@ class liuyao:
         main_gua_name = f"{main_gua[10].replace('宫','')}-{main_gua[11]}"
         hc = f"({main_gua[8]})" if main_gua[8] else ""
         
-        bbgua = list(map(int, self.gua))
-        for i in range(0, len(self.dgua), 2):
-            idx = self.dgua[i]
-            if self.dgua[i+1] == '1':
-                bbgua[idx] = 2
-            else:
-                bbgua[idx] = 1
-        self.bguastr = ''.join(map(str, bbgua))
-        bian_gua = self.gua64[self.bguastr]
-        bian_gua_name = f"{bian_gua[10].replace('宫','')}-{bian_gua[11]}"
-        hc2 = f"({bian_gua[8]})" if bian_gua[8] else ""
+        binfo = self._bian_info()
+        bbgua = binfo['bbgua']
+        bian_gua_name = binfo['name']
+        hc2 = binfo['detail']
+        bian_lines = binfo['lines']
 
         syw = main_gua[6]
         yyw = main_gua[7]
@@ -278,8 +338,8 @@ class liuyao:
                 'zhuyao_name': main_gua[i],
                 'shi_ying': ('世' if (i + 1) == syw else '') + ('应' if (i + 1) == yyw else ''),
                 'dong': dongyao.get(i, ''),
-                'bianyao_type': 'yang' if str(bbgua[i]) == '1' else 'yin',
-                'bianyao_name': bian_gua[i]
+                'bianyao_type': ('yang' if str(bbgua[i]) == '1' else 'yin') if binfo['active'] else '',
+                'bianyao_name': bian_lines[i]
             }
             lines.append(line_data)
 

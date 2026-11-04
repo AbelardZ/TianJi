@@ -1,0 +1,49 @@
+{# 天机系统 · 全站统一抬头。导航高亮由请求路径自动判定，页面无需传参。 #}
+{% set tj_path = request.path %}
+{% if tj_path == '/' %}
+    {% set tj_module = '总览' %}
+{% elif tj_path.startswith('/history') %}
+    {% set tj_module = '历史记录' %}
+{% elif tj_path.startswith('/liuyao') %}
+    {% set tj_module = '六爻排盘' %}
+{% elif tj_path.startswith('/mingli') %}
+    {% set tj_module = '命理排盘' %}
+{% elif tj_path.startswith('/qimen') %}
+    {% set tj_module = '奇门排盘' %}
+{% elif tj_path.startswith('/xiaoliuren') %}
+    {% set tj_module = '小六壬' %}
+{% elif tj_path.startswith('/meihua') %}
+    {% set tj_module = '梅花易数' %}
+{% elif tj_path.startswith('/daliuren') %}
+    {% set tj_module = '大六壬' %}
+{% else %}
+    {% set tj_module = '总览' %}
+{% endif %}
+{% set tj_home = 'active' if tj_path == '/' else '' %}
+{% set tj_liuyao = 'active' if tj_path.startswith('/liuyao') or tj_path.startswith('/history') else '' %}
+{% set tj_mingli = 'active' if tj_path.startswith('/mingli') else '' %}
+{% set tj_qimen = 'active' if tj_path.startswith('/qimen') else '' %}
+{% set tj_xiaoliuren = 'active' if tj_path.startswith('/xiaoliuren') else '' %}
+{% set tj_meihua = 'active' if tj_path.startswith('/meihua') else '' %}
+{% set tj_daliuren = 'active' if tj_path.startswith('/daliuren') else '' %}
+<header class="tj-header">
+    <a class="tj-brand" href="/">
+        <span class="tj-brand-mark" aria-hidden="true">天</span>
+        <span class="tj-brand-name">天机系统</span>
+        <span class="tj-sep" aria-hidden="true"></span>
+        <span class="tj-mod">{{ tj_module }}</span>
+    </a>
+    <nav class="tj-nav">
+        <a href="/" class="{{ tj_home }}">首页</a>
+        <a href="/mingli" class="{{ tj_mingli }}">命理排盘</a>
+        <a href="/liuyao" class="{{ tj_liuyao }}">六爻排盘</a>
+        <a href="/meihua" class="{{ tj_meihua }}">梅花易数</a>
+        <a href="/qimen" class="{{ tj_qimen }}">奇门排盘</a>
+        <a href="/xiaoliuren" class="{{ tj_xiaoliuren }}">小六壬</a>
+        <a href="/daliuren" class="{{ tj_daliuren }}">大六壬</a>
+    </nav>
+    <div class="tj-actions">
+        <button class="tj-icon-btn tj-theme" type="button" title="切换深色模式" aria-label="切换深色模式">☾</button>
+        <button class="tj-icon-btn" type="button" onclick="openSettings()" title="设置" aria-label="设置">⚙</button>
+    </div>
+</header>

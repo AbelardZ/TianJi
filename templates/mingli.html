@@ -1,0 +1,2072 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>天机系统 · 命理排盘</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="/static/js/iztro-v2.6.1.min.js"></script>
+    <link rel="stylesheet" href="/static/css/ziwei.css">
+    <style>
+        :root {
+            /* Light Theme - Chinese Elegant */
+            --bg-body: #f4ecd8;
+            --bg-card: #fdfbf7;
+            --bg-panel-left: #f9f6f0;
+            --bg-input: #ffffff;
+            --border-color: #d8cbb8;
+            --text-main: #2c2a26;
+            --text-secondary: #5c5549;
+            --primary-color: #8b2f2f; /* Deep Traditional Red */
+            --primary-text: #8b2f2f; /* 红色文字专用：白底上已足够深 */
+            --primary-hover: #722424;
+            --accent-color: #8b2f2f;
+            --danger-color: #a33b3b;
+            --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+            --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            --radius-md: 8px;
+            --radius-lg: 16px;
+            --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+            --yao-yang: #8b2f2f;
+            --yao-yin: #2c2a26;
+            --yao-bg: #e5e7eb;
+            /* Element colors */
+            --wx-mu: #2e9e44;
+            --wx-huo: #d64545;
+            --wx-tu: #8d6e2f;
+            --wx-jin: #c9a227;
+            --wx-shui: #2f6fb2;
+        }
+
+        [data-theme="dark"] {
+            /* Dark Theme - Chinese Ink */
+            --bg-body: #1c1a18;
+            --bg-card: #262320;
+            --bg-panel-left: #211e1c;
+            --bg-input: #332f2b;
+            --border-color: #403b36;
+            --text-main: #e8e2d5;
+            --text-secondary: #a39c91;
+            --primary-color: #a84242;
+            /* 深色背景上 #a84242 对比度仅 2.6，作为文字需单独提亮 */
+            --primary-text: #d97070;
+            --primary-hover: #c95151;
+            --accent-color: #a84242;
+            --yao-yang: #c95151;
+            --yao-yin: #a39c91;
+            --yao-bg: #4b5563;
+            --wx-mu: #5fc97c;
+            --wx-huo: #ff7a70;
+            --wx-tu: #c8914e;
+            --wx-jin: #e6c860;
+            --wx-shui: #7db4ea;
+        }
+
+        * { box-sizing: border-box; outline: none; }
+
+        body {
+            font-family: "Noto Serif SC", "SimSun", "STZhongsong", serif;
+            background-color: var(--bg-body);
+            color: var(--text-main);
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+
+        .main-wrapper {
+            flex: 1;
+            display: flex;
+            justify-content: center;
+            padding: 1.25rem 1.5rem 2rem;
+        }
+
+        .container {
+            display: flex;
+            width: 100%;
+            max-width: 1600px;
+            height: calc(100vh - 140px);
+            min-height: 700px;
+            background-color: transparent;
+            border-radius: 0;
+            box-shadow: none;
+            overflow: visible;
+            border: 0;
+            flex-direction: row !important;
+        }
+
+        /* --- Left Panel (Controls) --- */
+        .left-panel {
+            width: 420px;
+            background-color: var(--bg-panel-left);
+            border-right: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+            flex-shrink: 0;
+            overflow-y: auto;
+            transition: width 0.25s ease;
+        }
+        .left-panel.collapsed {
+            width: 0;
+            border-right: 0;
+        }
+        .left-panel.collapsed .panel-body,
+        .left-panel.collapsed .panel-toolbar {
+            display: none;
+        }
+        .left-panel.archive-modal {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            width: min(560px, calc(100vw - 2rem));
+            height: auto;
+            max-height: calc(100vh - 2rem);
+            transform: translate(-50%, -50%);
+            z-index: 1001;
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            box-shadow: var(--shadow-lg);
+        }
+        .left-panel.archive-modal .panel-body {
+            max-height: calc(100vh - 7rem);
+        }
+        .archive-backdrop {
+            display: none;
+            position: fixed;
+            inset: 0;
+            z-index: 1000;
+            background: rgba(28, 26, 24, 0.48);
+            backdrop-filter: blur(3px);
+        }
+        .panel-toolbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.8rem 1.1rem;
+            border-bottom: 1px solid var(--border-color);
+            background-color: var(--bg-card);
+            flex-shrink: 0;
+        }
+        .panel-toolbar-title {
+            font-weight: 700;
+            color: var(--primary-color);
+            font-size: 0.95rem;
+        }
+
+        .panel-body {
+            padding: 1.5rem;
+            overflow-y: auto;
+            flex: 1;
+        }
+
+        .form-group { margin-bottom: 1.25rem; }
+
+        label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        input[type="text"], input[type="date"], input[type="number"], select {
+            width: 100%;
+            padding: 0.625rem 0.875rem;
+            font-size: 0.95rem;
+            line-height: 1.5;
+            color: var(--text-main);
+            background-color: var(--bg-input);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+
+        input:focus, select:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+        }
+
+        .datetime-row {
+            display: flex;
+            gap: 0.75rem;
+        }
+        .datetime-item { flex: 2; }
+        .datetime-item.small { flex: 1; }
+
+        .correction-box {
+            background-color: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            padding: 1rem;
+            margin-top: 0.75rem;
+            display: none;
+        }
+        .correction-box.open { display: block; }
+        .correction-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0.9rem;
+        }
+        .correction-group { display: flex; flex-direction: column; gap: 0.35rem; }
+        .correction-title {
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--primary-color);
+            text-align: center;
+        }
+        .correction-selects { display: flex; gap: 0.4rem; }
+        .correction-selects select { padding: 0.4rem; font-size: 0.85rem; text-align: center; }
+        .toggle-link {
+            background: none;
+            border: 1px solid var(--border-color);
+            color: var(--text-secondary);
+            padding: 0.4rem 0.75rem;
+            border-radius: var(--radius-md);
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            width: 100%;
+        }
+        .toggle-link:hover { color: var(--primary-color); border-color: var(--primary-color); }
+
+        /* Records switcher */
+        .records-block {
+            margin-bottom: 0;
+            padding: 0;
+        }
+        .records-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-bottom: 0.85rem;
+            margin-bottom: 0.9rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+        .records-header span {
+            font-weight: 700;
+            color: var(--primary-color);
+            font-size: 0.95rem;
+        }
+        .records-search {
+            display: flex;
+            gap: 0.4rem;
+            margin-bottom: 0.6rem;
+        }
+        .records-search input {
+            flex: 1;
+            padding: 0.4rem 0.6rem;
+            font-size: 0.82rem;
+            border: 1px solid var(--border-color);
+            border-radius: 3px;
+            background-color: var(--bg-input);
+            color: var(--text-main);
+            min-width: 0;
+        }
+        .records-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0;
+            max-height: 420px;
+            overflow-y: auto;
+        }
+        .record-item {
+            border: 0;
+            border-bottom: 1px solid var(--border-color);
+            border-radius: 0;
+            padding: 0.8rem 0.15rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 0.5rem;
+            transition: border-color 0.2s;
+        }
+        .record-item:hover { background: rgba(139, 47, 47, 0.035); }
+        .record-main { min-width: 0; }
+        .record-name {
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+        .record-time { font-size: 0.75rem; color: var(--text-secondary); }
+        .record-tags { display: flex; flex-wrap: wrap; gap: 0.25rem; margin-top: 0.25rem; }
+        .record-tag {
+            font-size: 0.7rem;
+            color: var(--primary-color);
+            background: rgba(139, 47, 47, 0.08);
+            border-radius: 4px;
+            padding: 0.05rem 0.35rem;
+        }
+        .record-actions { display: flex; gap: 0.3rem; flex-shrink: 0; }
+        .records-empty { color: var(--text-secondary); font-size: 0.82rem; text-align: center; padding: 0.5rem; }
+        .record-item.current { border-left: 3px solid var(--primary-color); padding-left: 0.55rem; background: rgba(139, 47, 47, 0.05); }
+        .small-hint { font-size: 0.75rem; color: var(--text-secondary); margin-top: 0.3rem; line-height: 1.5; }
+
+        .checkbox-row {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-top: 0.5rem;
+        }
+        .checkbox-row input[type="checkbox"] {
+            width: auto;
+            accent-color: var(--primary-color);
+        }
+        .checkbox-row label {
+            margin: 0;
+            font-size: 0.88rem;
+            text-transform: none;
+            letter-spacing: 0;
+            font-weight: 600;
+        }
+        .disabled-input { opacity: 0.55; }
+
+        .tag-chip {
+            display: inline-block;
+            font-size: 0.78rem;
+            color: var(--primary-text);
+            background: rgba(139, 47, 47, 0.08);
+            border-radius: 4px;
+            padding: 0.12rem 0.5rem;
+            margin-right: 0.35rem;
+        }
+        [data-theme="dark"] .tag-chip { background: rgba(217, 112, 112, 0.14); }
+
+        .btn-group {
+            margin-top: 2rem;
+            display: flex;
+            gap: 1rem;
+        }
+        .btn {
+            padding: 0.75rem 1.5rem;
+            border-radius: var(--radius-md);
+            font-size: 0.95rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .btn-primary {
+            background-color: var(--primary-color);
+            color: white;
+            flex: 2;
+            box-shadow: 0 4px 6px rgba(37, 99, 235, 0.2);
+        }
+        .btn-primary:hover {
+            background-color: var(--primary-hover);
+            transform: translateY(-1px);
+            box-shadow: 0 6px 8px rgba(37, 99, 235, 0.3);
+        }
+        .btn-secondary {
+            background-color: var(--bg-input);
+            color: var(--text-main);
+            border: 1px solid var(--border-color);
+            flex: 1;
+        }
+        .btn-secondary:hover {
+            border-color: var(--text-secondary);
+            background-color: var(--bg-panel-left);
+        }
+
+        /* --- Center Panel (Results) --- */
+        .center-panel {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background-color: transparent;
+            min-width: 0;
+        }
+
+        .result-header {
+            padding: 0.45rem 1.25rem;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .result-header h2 {
+            margin: 0;
+            font-size: 0.95rem;
+            font-weight: 600;
+            color: var(--text-main);
+            line-height: 1.25;
+        }
+        .action-buttons { display: flex; gap: 0.4rem; align-items: center; }
+        .btn-sm {
+            padding: 0.4rem 0.8rem;
+            font-size: 0.8rem;
+            border-radius: var(--radius-md);
+            border: 1px solid var(--border-color);
+            background: var(--bg-input);
+            color: var(--text-main);
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .btn-sm:hover {
+            border-color: var(--primary-color);
+            color: var(--primary-color);
+        }
+        .btn-danger {
+            background-color: var(--danger-color);
+            color: white;
+            border-color: var(--danger-color);
+        }
+        .btn-danger:hover {
+            background-color: #7f2424;
+            color: white;
+            border-color: #7f2424;
+        }
+
+        .result-content {
+            flex: 1;
+            padding: 2rem;
+            overflow-y: auto;
+            background-color: var(--bg-panel-left);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+        }
+
+        .paper {
+            background-color: var(--bg-card);
+            width: 100%;
+            max-width: 1000px;
+            flex: 0 0 auto;
+            padding: 2.5rem;
+            border-radius: var(--radius-md);
+            box-shadow: var(--shadow-sm);
+            border: 1px solid var(--border-color);
+            min-height: 0;
+            height: auto;
+            position: relative;
+        }
+
+        /* --- Right Panel (Remarks) --- */
+        .remarks-panel {
+            width: 340px;
+            background-color: var(--bg-card);
+            border-left: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+            flex-shrink: 0;
+            overflow-y: auto;
+        }
+
+        /* --- Bazi Styles --- */
+        .paipan-header {
+            text-align: center;
+            margin-bottom: 1.75rem;
+            border-bottom: 2px solid var(--border-color);
+            padding-bottom: 1rem;
+        }
+        .pp-date {
+            font-size: 0.88rem;
+            font-weight: 400;
+            color: var(--text-main);
+            margin-bottom: 0.4rem;
+        }
+        .pp-name {
+            font-size: 1.35rem;
+            font-weight: 700;
+            color: var(--text-main);
+            font-family: "Noto Serif SC", "SimSun", "STSong", serif;
+            margin-bottom: 0.45rem;
+        }
+        .pp-ganzhi {
+            font-size: 1rem;
+            color: var(--text-secondary);
+            margin-top: 0.25rem;
+        }
+
+        .error-box {
+            background: rgba(163, 59, 59, 0.08);
+            border: 1px solid var(--danger-color);
+            color: var(--danger-color);
+            border-radius: var(--radius-md);
+            padding: 0.75rem 1rem;
+            margin-bottom: 1.25rem;
+            font-size: 0.9rem;
+        }
+
+        /* 表格基础结构（外观配色见下方“八字盘面”样式块） */
+        .bazi-table {
+            width: 100%;
+            table-layout: fixed;
+        }
+        .bazi-table th, .bazi-table td {
+            text-align: center;
+            vertical-align: middle;
+            min-height: 54px;
+        }
+        .bazi-table td {
+            color: var(--text-main);
+            font-size: 0.95rem;
+        }
+        .bazi-table .gan-cell, .bazi-table .zhi-cell {
+            font-family: "Noto Sans SC", "Microsoft YaHei", sans-serif;
+            font-size: clamp(1.35rem, 1.7vw, 1.9rem);
+            font-weight: 400;
+            letter-spacing: 0.05em;
+            line-height: 1.1;
+        }
+        .bazi-table .small-stat {
+            color: var(--text-secondary);
+        }
+        .canggan-cell { font-size: 0.68rem; }
+        .canggan-stack { display: flex; flex-direction: column; gap: 0.1rem; align-items: center; }
+        .canggan-stack span { display: block; }
+        .small-cell { font-size: 0.82rem; color: var(--text-secondary); line-height: 1.6; }
+        .shensha-tag {
+            display: inline-block;
+            background: transparent;
+            color: var(--text-secondary);
+            border-radius: 0;
+            padding: 0;
+            margin: 0.1rem 0.25rem 0.1rem 0;
+            font-size: 0.75rem;
+            white-space: nowrap;
+        }
+        .bazi-table .shishen-cell,
+        .bazi-table .canggan-shishen { font-size: 0.62rem; font-weight: 600; }
+        .nayin-木 { color: var(--wx-mu); }
+        .nayin-火 { color: var(--wx-huo); }
+        .nayin-土 { color: var(--wx-tu); }
+        .nayin-金 { color: var(--wx-jin); }
+        .nayin-水 { color: var(--wx-shui); }
+
+        /* Element-tinted cells */
+        .tint-木 { background: rgba(47, 158, 68, 0.10); }
+        .tint-火 { background: rgba(214, 69, 69, 0.10); }
+        .tint-土 { background: rgba(141, 110, 47, 0.12); }
+        .tint-金 { background: rgba(201, 162, 39, 0.14); }
+        .tint-水 { background: rgba(47, 111, 178, 0.10); }
+        [data-theme="dark"] .tint-木 { background: rgba(95, 201, 124, 0.16); }
+        [data-theme="dark"] .tint-火 { background: rgba(255, 122, 112, 0.15); }
+        [data-theme="dark"] .tint-土 { background: rgba(200, 145, 78, 0.16); }
+        [data-theme="dark"] .tint-金 { background: rgba(230, 200, 96, 0.16); }
+        [data-theme="dark"] .tint-水 { background: rgba(125, 180, 234, 0.15); }
+
+        .bazi-table .shensha-tag { margin: 0.12rem 0.1rem; }
+
+        .bazi-compact-wrapper {
+            background: rgba(255, 255, 255, 0.28);
+            border: 1px solid var(--border-color);
+            border-radius: 18px;
+            overflow: hidden;
+            box-shadow: inset 0 1px 0 rgba(255,255,255,0.5);
+            margin-bottom: 1.25rem;
+        }
+        .bazi-compact-grid {
+            display: grid;
+            grid-template-columns: 70px repeat(7, minmax(76px, 1fr));
+            min-width: 0;
+        }
+        .bazi-compact-empty,
+        .bazi-compact-header,
+        .bazi-compact-label,
+        .bazi-compact-cell {
+            border-right: 1px solid var(--border-color);
+            border-bottom: 1px solid var(--border-color);
+            min-height: 58px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 0.4rem 0.3rem;
+            background: rgba(255,255,255,0.18);
+        }
+        .bazi-compact-header {
+            min-height: 42px;
+            background: rgba(240, 236, 232, 0.94);
+            font-size: 0.78rem;
+            color: var(--text-secondary);
+            font-weight: 600;
+        }
+        .bazi-compact-label {
+            justify-content: flex-start;
+            padding-left: 0.8rem;
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            background: rgba(245, 240, 236, 0.9);
+            font-weight: 600;
+        }
+        .bazi-compact-cell {
+            flex-direction: column;
+            gap: 0.15rem;
+            min-height: 96px;
+            background: rgba(255,255,255,0.12);
+        }
+        .bazi-compact-cell.is-day {
+            background: rgba(214, 159, 117, 0.12);
+        }
+        .bazi-compact-main {
+            font-size: clamp(1.8rem, 2vw, 2.5rem);
+            line-height: 1;
+            font-weight: 700;
+            letter-spacing: 0.04em;
+        }
+        .bazi-compact-sub {
+            font-size: 0.88rem;
+            color: var(--text-secondary);
+            line-height: 1.4;
+        }
+        .bazi-compact-detail {
+            font-size: 0.7rem;
+            color: var(--text-secondary);
+            line-height: 1.5;
+        }
+        .bazi-compact-legend {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 0.75rem;
+            flex-wrap: wrap;
+            padding: 0.8rem 1rem 0;
+            font-size: 0.76rem;
+            color: var(--text-secondary);
+        }
+        .bazi-compact-legend span {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.3rem;
+        }
+        .bazi-compact-dot {
+            width: 0.7rem;
+            height: 0.7rem;
+            border-radius: 50%;
+            display: inline-block;
+        }
+        .bazi-compact-dot.day { background: #d99a5b; }
+        .bazi-compact-dot.born { background: #43b38d; }
+
+        .section-title {
+            font-size: 1rem;
+            font-weight: 700;
+            color: var(--primary-color);
+            margin: 1.5rem 0 0.75rem;
+            padding-bottom: 0.35rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 0.75rem;
+            margin-bottom: 0.5rem;
+        }
+        .info-item {
+            background-color: var(--bg-panel-left);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            padding: 0.65rem 0.9rem;
+            text-align: center;
+        }
+        .info-label {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            margin-bottom: 0.2rem;
+        }
+        .info-value {
+            font-size: 1rem;
+            font-weight: 600;
+        }
+
+        .wx-list { display: flex; flex-direction: column; gap: 0.55rem; }
+        .wx-item {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+        .wx-name { width: 4.5rem; font-weight: 600; font-size: 0.92rem; }
+        .wx-bar-track {
+            flex: 1;
+            height: 9px;
+            background-color: var(--bg-input);
+            border: 1px solid var(--border-color);
+            border-radius: 5px;
+            overflow: hidden;
+        }
+        .wx-bar-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--primary-color), #b85c5c);
+            border-radius: 5px;
+            transition: width 0.4s ease;
+        }
+        .wx-wang { width: 2rem; text-align: center; font-weight: 700; }
+        .st-strong { color: var(--primary-color); }
+        .st-mid { color: #b0791f; }
+        .st-weak { color: var(--text-secondary); }
+        .st-rest { color: #4f6d8f; }
+        .st-dead { color: #8a8a8a; }
+
+        .small-note {
+            font-size: 0.78rem;
+            color: var(--text-secondary);
+            margin-top: 0.5rem;
+            line-height: 1.6;
+        }
+
+        .dayun-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .dayun-table th, .dayun-table td {
+            border: 1px solid var(--border-color);
+            padding: 0.55rem 0.4rem;
+            text-align: center;
+            font-size: 0.92rem;
+        }
+        .dayun-table th {
+            background-color: var(--bg-panel-left);
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+        }
+        .dayun-table .gan-cell { font-size: 1.15rem; }
+
+        .liunian-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+        }
+        .liunian-item {
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            padding: 0.4rem 0.7rem;
+            font-size: 0.88rem;
+            background-color: var(--bg-panel-left);
+        }
+        .liunian-item b { color: var(--primary-color); margin-right: 0.25rem; }
+
+        /* Element colors */
+        .c-木 { color: var(--wx-mu) !important; }
+        .c-火 { color: var(--wx-huo) !important; }
+        .c-土 { color: var(--wx-tu) !important; }
+        .c-金 { color: var(--wx-jin) !important; }
+        .c-水 { color: var(--wx-shui) !important; }
+
+        /* Dayun / Liunian interactive */
+        .yun-tip { font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 0.75rem; }
+        .dayun-bar {
+            display: flex;
+            gap: 0.5rem;
+            overflow: visible;
+            padding-bottom: 0.5rem;
+        }
+        .dayun-list,
+        .liunian-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            align-items: stretch;
+        }
+        .dayun-block, .liunian-block {
+            position: relative;
+            flex: 0 0 auto;
+            min-width: 88px;
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            padding: 0.45rem 0.5rem;
+            text-align: center;
+            background-color: var(--bg-panel-left);
+            cursor: pointer;
+            transition: border-color 0.2s, background-color 0.2s, box-shadow 0.2s ease;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+        .dayun-block:hover, .liunian-block:hover {
+            border-color: var(--primary-color);
+            background-color: var(--bg-card);
+        }
+        .dy-age, .ln-year { font-size: 0.72rem; color: var(--text-secondary); }
+        .dy-gz-wrap, .ln-gz-wrap {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin: 0.12rem 0;
+            line-height: 1.2;
+        }
+        .dy-gan, .ln-gan,
+        .dy-zhi, .ln-zhi {
+            display: block;
+            font-size: 1.12rem;
+            font-weight: 700;
+            letter-spacing: 0.05em;
+        }
+        .dy-zhi, .ln-zhi { font-size: 0.9rem; color: var(--text-secondary); }
+        .dy-nayin, .ln-nayin { font-size: 0.72rem; color: var(--text-secondary); }
+        .yun-detail {
+            display: none !important;
+        }
+        .yd-row { font-size: 0.82rem; line-height: 1.9; }
+        .tab-btn.active {
+            background-color: var(--primary-color);
+            color: #fff;
+            border-color: var(--primary-color);
+        }
+        .records-toggle { font-size: 0.8rem; color: var(--text-secondary); }
+        .saved-note {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            align-self: center;
+        }
+
+        /* Chart + dayun horizontal layout */
+        .chart-wrap {
+            display: block;
+            margin-top: 0.6rem;
+        }
+        .chart-main {
+            width: 100%;
+            min-width: 0;
+        }
+        .chart-side {
+            width: 100%;
+            flex-shrink: 0;
+            border-left: none;
+            padding-left: 0;
+            overflow: visible;
+            max-height: none;
+        }
+        .yun-toolbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 0.25rem;
+            padding-top: 0.5rem;
+            border-top: 1px solid var(--border-color);
+            flex-wrap: wrap;
+            gap: 0.5rem;
+        }
+        .yun-label {
+            font-size: 0.95rem;
+            font-weight: 700;
+            color: var(--primary-color);
+        }
+        .dayun-list,
+        .liunian-grid {
+            display: grid;
+            grid-template-columns: repeat(10, minmax(0, 1fr));
+            gap: 0.35rem;
+            overflow: visible;
+            padding-bottom: 0.1rem;
+            margin-top: 0.5rem;
+        }
+        .dayun-block, .liunian-block {
+            min-width: 0;
+            width: 100%;
+            border: 1px solid var(--border-color);
+            border-left-style: solid;
+            border-left-width: 3px;
+            border-radius: 3px;
+            padding: 0.45rem 0.28rem;
+            text-align: center;
+            background-color: var(--bg-input);
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 84px;
+        }
+        .dy-age, .ln-year {
+            font-size: 0.72rem;
+            color: var(--text-secondary);
+            margin-bottom: 0.1rem;
+        }
+        .dy-gz-wrap, .ln-gz-wrap {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            line-height: 1.1;
+            margin: 0.16rem 0;
+        }
+        .dy-gan, .ln-gan,
+        .dy-zhi, .ln-zhi {
+            font-size: 1rem;
+            font-weight: 400;
+            letter-spacing: 0.04em;
+        }
+        .dy-zhi, .ln-zhi { color: var(--text-secondary); }
+        .dy-nayin, .ln-nayin {
+            font-size: 0.72rem;
+            line-height: 1.4;
+        }
+            .liuyue-grid { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); gap: 0.35rem; margin-top: 0.5rem; }
+            .liuyue-block {
+                min-width: 0;
+                width: 100%;
+                border: 1px solid var(--border-color);
+                border-radius: 3px;
+                padding: 0.35rem 0.2rem;
+                text-align: center;
+                background: var(--bg-input);
+            }
+            .liuyue-jieqi { font-size: 0.68rem; color: var(--text-secondary); }
+            .liuyue-gz { display: flex; flex-direction: column; line-height: 1.15; font-weight: 400; font-size: 0.95rem; margin-top: 0.26rem; }
+        .side-title {
+            font-size: 0.85rem;
+            font-weight: 700;
+            color: var(--text-secondary);
+            margin-bottom: 0.6rem;
+        }
+        .bazi-run-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 0.6rem;
+            padding: 0.6rem 0.2rem 0.2rem;
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+            border-top: 1px solid var(--border-color);
+            margin-top: 0.5rem;
+        }
+        .bazi-run-row strong {
+            color: var(--text-main);
+            font-weight: 700;
+        }
+        .bazi-run-block {
+            display: flex;
+            flex-direction: row;
+            flex-wrap: wrap;
+            overflow: visible;
+            gap: 0.35rem;
+            padding: 0.2rem 0 0.1rem;
+        }
+        .yun-row-stack {
+            display: flex;
+            flex-direction: column;
+            gap: 0.85rem;
+            margin-top: 0.5rem;
+        }
+        .yun-row-block {
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            gap: 0.4rem;
+        }
+        .yun-title {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            font-weight: 700;
+            letter-spacing: 0.04em;
+        }
+        .liunian-block.is-hidden { display: none; }
+.selected-run {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 1px rgba(43, 123, 180, 0.2), 0 10px 18px rgba(43, 123, 180, 0.12);
+            background: rgba(43, 123, 180, 0.06);
+            transform: translateY(-1px);
+        }
+        .dayun-block, .liunian-block { border-left: 3px solid var(--border-color); }
+        .dayun-block:hover, .liunian-block:hover { transform: translateY(-2px); box-shadow: var(--shadow-sm); }
+        .dayun-block.selected-run, .liunian-block.selected-run {
+            box-shadow: none;
+            background: var(--bg-input);
+            transform: none;
+        }
+        @media (max-width: 720px) {
+            .chart-wrap { flex-direction: column; }
+            .chart-side {
+                width: 100%;
+                max-height: none;
+                border-left: none;
+                border-top: 1px solid var(--border-color);
+                padding-left: 0;
+                padding-top: 1rem;
+            }
+            .dayun-list, .liunian-grid { grid-template-columns: repeat(5, minmax(0, 1fr)); overflow: visible; }
+            .liuyue-grid { grid-template-columns: repeat(6, minmax(0, 1fr)); }
+            .dayun-block, .liunian-block { min-width: 88px; }
+        }
+
+        /* Collapsible remarks panel */
+        .remarks-panel { transition: width 0.25s ease; }
+        .remarks-panel.collapsed { width: 48px; }
+        .remarks-panel.collapsed .remarks-title,
+        .remarks-panel.collapsed .remarks-body { display: none; }
+        .remarks-header { justify-content: space-between; cursor: pointer; }
+
+        .empty-state {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            color: var(--text-secondary);
+            opacity: 0.5;
+        }
+
+        /* Final visual pass: a quieter reading surface with clear sections. */
+        /* 头部只承载右上角两个轻量操作；宽度与纸面同口径，右缘正好压在纸面右缘上 */
+        .result-header {
+            min-height: 0;
+            width: 100%;
+            max-width: 1380px;
+            margin: 0 auto;
+            padding: 0 0 clamp(0.35rem, 0.9vw, 0.55rem);
+            border: 0;
+            background: transparent;
+            justify-content: flex-end;
+        }
+        .result-header h2 { display: none; }
+        .action-buttons { gap: 0.15rem; }
+        /* 档案 / 存图：去掉边框与底色，平时只留文字，悬停才浮现反馈 */
+        .btn-ghost {
+            display: inline-flex;
+            align-items: center;
+            padding: 0.28rem 0.6rem;
+            font-size: 0.74rem;
+            letter-spacing: 0.06em;
+            line-height: 1.2;
+            border: 1px solid transparent;
+            border-radius: 6px;
+            background: transparent;
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: color 0.18s ease, background-color 0.18s ease, border-color 0.18s ease;
+        }
+        .btn-ghost:hover {
+            color: var(--text-main);
+            background: rgba(128, 120, 110, 0.07);
+            border-color: rgba(128, 120, 110, 0.16);
+        }
+        [data-theme="dark"] .btn-ghost:hover {
+            background: rgba(255, 255, 255, 0.06);
+            border-color: rgba(255, 255, 255, 0.14);
+        }
+        .result-content {
+            padding: 0.25rem 0 clamp(1rem, 3vw, 2.75rem);
+            background: transparent;
+        }
+        .saved-note { display: none; }
+        /* 双列版式：主盘占 5 份、运限占 3 份（约 1.67 : 1），主盘优先 */
+        .paper {
+            max-width: 1380px;
+            padding: clamp(0.9rem, 1.6vw, 1.35rem) clamp(0.9rem, 1.8vw, 1.6rem) 2.2rem;
+            border-radius: 8px;
+            box-shadow: 0 14px 35px rgba(45, 39, 31, 0.08);
+            display: grid;
+            grid-template-columns: minmax(0, 5fr) minmax(0, 3fr);
+            column-gap: clamp(1.1rem, 2.2vw, 2.1rem);
+            align-items: start;
+        }
+        .paipan-header {
+            grid-column: 1 / -1;
+            text-align: left;
+            margin: 0 0 1.35rem;
+            padding: 0 0 1.1rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+        .chart-left {
+            grid-column: 1;
+            grid-row: 2;
+            min-width: 0;
+        }
+        .pp-name { margin-bottom: 0.3rem; }
+        .pp-date { margin-bottom: 0.2rem; color: var(--text-secondary); }
+        .pp-ganzhi { min-height: 1.1rem; }
+        .bazi-table {
+            margin-bottom: 1.25rem;
+            border: 0;
+            border-spacing: 0;
+            border-collapse: separate;
+            border-radius: 10px;
+            overflow: hidden;
+            background: transparent;
+        }
+        /* 去掉内部网格线；整表只用一个中性色，四柱与运限不再分蓝红 */
+        .bazi-table th, .bazi-table td {
+            border: 0;
+            padding: 0.55rem 0.3rem;
+        }
+        /* 表头：全列统一的浅中性底 */
+        .bazi-table thead th {
+            background: rgba(128, 120, 110, 0.07);
+            color: var(--text-secondary);
+            font-size: 0.76rem;
+            font-weight: 600;
+            letter-spacing: 0.14em;
+            padding: 0.72rem 0.3rem;
+        }
+        .bazi-table thead th.row-label {
+            font-size: 0.68rem;
+            letter-spacing: 0.18em;
+            width: 3.6rem;
+            white-space: nowrap;
+        }
+        /* 行首标签：与全表同底，不做色块，避免多出一条竖向边界 */
+        .bazi-table tbody .row-label {
+            color: var(--text-secondary);
+            font-size: 0.7rem;
+            font-weight: 600;
+            letter-spacing: 0.18em;
+            width: 3.6rem;
+            white-space: nowrap;
+        }
+        /* 全表唯一的竖向分割线：只在「时柱 → 大运」之间 */
+        .bazi-table thead th:nth-child(6),
+        .bazi-table tbody td:nth-child(6) {
+            border-left: 1px solid rgba(128, 120, 110, 0.14);
+        }
+        /* 取消隔行换色：全表同一个底色；悬停才给一点中性反馈 */
+        .bazi-table tbody tr:hover td:nth-child(n + 2) { background: rgba(128, 120, 110, 0.06); }
+        /* 只保留四角圆角，整体更连贯 */
+        .bazi-table thead th:first-child { border-top-left-radius: 10px; }
+        .bazi-table thead th:last-child { border-top-right-radius: 10px; }
+        .bazi-table tbody tr:last-child td:first-child { border-bottom-left-radius: 10px; }
+        .bazi-table tbody tr:last-child td:last-child { border-bottom-right-radius: 10px; }
+        /* 深色主题：同一套中性灰 */
+        [data-theme="dark"] .bazi-table thead th { background: rgba(255, 255, 255, 0.055); }
+        [data-theme="dark"] .bazi-table thead th:nth-child(6),
+        [data-theme="dark"] .bazi-table tbody td:nth-child(6) { border-left-color: rgba(255, 255, 255, 0.12); }
+        [data-theme="dark"] .bazi-table tbody tr:hover td:nth-child(n + 2) { background: rgba(255, 255, 255, 0.05); }
+        /* 盘面变宽后同步放大内部字号，避免格子显得空旷 */
+        .bazi-table .gan-cell, .bazi-table .zhi-cell { font-size: clamp(1.35rem, 1.9vw, 1.9rem); }
+        .bazi-table .small-stat { font-size: 0.72rem; line-height: 1.5; }
+        .bazi-table .shishen-cell, .bazi-table .canggan-shishen { font-size: 0.66rem; }
+        /* 起运说明：并入右侧运限区，作为大运上方的一行小注 */
+        .bazi-run-row {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: flex-start;
+            gap: 0.15rem 1.6rem;
+            padding: 0 0.2rem 0.7rem;
+            margin: 0 0 0.9rem;
+            border-top: 0;
+            border-bottom: 1px solid rgba(128, 120, 110, 0.16);
+            font-size: 0.72rem;
+            line-height: 1.6;
+            color: var(--text-secondary);
+        }
+        .bazi-run-row strong { color: var(--text-main); }
+        [data-theme="dark"] .bazi-run-row { border-bottom-color: rgba(255, 255, 255, 0.12); }
+        .chart-wrap {
+            grid-column: 2;
+            grid-row: 2;
+            min-width: 0;
+            margin-top: 0;
+            padding: 0;
+            border-left: 0;
+        }
+        /* 三组各占一行，整组落在右侧 */
+        .yun-row-stack {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr);
+            align-items: start;
+            gap: 1.05rem;
+            margin-top: 0;
+        }
+        .yun-row-block {
+            display: flex;
+            flex-direction: column;
+            gap: 0.55rem;
+        }
+        .yun-title {
+            font-size: 0.74rem;
+            font-weight: 600;
+            letter-spacing: 0.2em;
+            color: var(--text-secondary);
+        }
+        /* 运限区：大运 10 格一行、流年 10 格一行、流月 12 格一行 */
+        .dayun-list, .liunian-grid {
+            grid-template-columns: repeat(10, minmax(0, 1fr));
+            gap: 0.34rem;
+            margin-top: 0;
+        }
+        .liuyue-grid {
+            grid-template-columns: repeat(12, minmax(0, 1fr));
+            gap: 0.26rem;
+            margin-top: 0;
+        }
+        /* 运限块：无底色，只用一根极淡的中性细线描边；三组统一高度并垂直居中以便行行对齐 */
+        .dayun-block, .liunian-block, .liuyue-block {
+            border: 1px solid rgba(128, 120, 110, 0.16);
+            border-radius: 7px;
+            background: transparent;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 106px;
+            padding: 0.45rem 0.08rem;
+            transition: background-color 0.18s ease, border-color 0.18s ease;
+        }
+        .dayun-block:hover, .liunian-block:hover, .liuyue-block:hover {
+            background: rgba(128, 120, 110, 0.06);
+            border-color: rgba(128, 120, 110, 0.28);
+            transform: none;
+            box-shadow: none;
+        }
+        /* 只有「当前选中」一项保留主色，作为全局唯一强调色 */
+        .dayun-block.selected-run, .liunian-block.selected-run, .liuyue-block.selected-run {
+            background: rgba(139, 47, 47, 0.07);
+            border-color: rgba(139, 47, 47, 0.3);
+            transform: none;
+            box-shadow: none;
+        }
+        [data-theme="dark"] .dayun-block, [data-theme="dark"] .liunian-block, [data-theme="dark"] .liuyue-block { border-color: rgba(255, 255, 255, 0.14); }
+        [data-theme="dark"] .dayun-block:hover, [data-theme="dark"] .liunian-block:hover, [data-theme="dark"] .liuyue-block:hover { background: rgba(255, 255, 255, 0.05); border-color: rgba(255, 255, 255, 0.24); }
+        [data-theme="dark"] .dayun-block.selected-run, [data-theme="dark"] .liunian-block.selected-run, [data-theme="dark"] .liuyue-block.selected-run { background: rgba(168, 66, 66, 0.18); border-color: rgba(168, 66, 66, 0.45); }
+        /* 列变窄后同步收字号并禁止折行，保证每格一行竖排不乱行 */
+        .dy-age, .ln-year { font-size: 0.6rem; white-space: nowrap; }
+        .dy-age { font-size: 0.52rem; letter-spacing: 0; }
+        /* 次级标注：大运起始年、流年岁数，统一小一号且不折行 */
+        .dy-year, .ln-age {
+            font-size: 0.52rem;
+            line-height: 1.3;
+            letter-spacing: 0;
+            color: var(--text-secondary);
+            opacity: 0.85;
+            white-space: nowrap;
+        }
+        /* 流月：不再标月份，只显节气与公历日期（在上），干支在下 */
+        .liuyue-jieqi, .liuyue-date {
+            font-size: 0.58rem;
+            line-height: 1.3;
+            letter-spacing: 0;
+            color: var(--text-secondary);
+            white-space: nowrap;
+        }
+        .liuyue-jieqi { opacity: 0.95; }
+        .liuyue-date { font-size: 0.54rem; opacity: 0.72; margin-top: 0.02rem; }
+        /* 深色背景本就吃亮度，次级文字不再叠 opacity */
+        [data-theme="dark"] .dy-year,
+        [data-theme="dark"] .ln-age,
+        [data-theme="dark"] .liuyue-jieqi { opacity: 1; }
+        [data-theme="dark"] .liuyue-date { opacity: 0.88; }
+        .dy-nayin, .ln-nayin { font-size: 0.6rem; white-space: nowrap; }
+        .liuyue-gz { font-size: 1rem; margin-top: 0.26rem; }
+        /* 视口不够宽时退回单列：主盘在上，运限三行在下通铺 */
+        @media (max-width: 1360px) {
+            .paper { grid-template-columns: minmax(0, 1fr); }
+            .chart-left, .chart-wrap { grid-column: 1; grid-row: auto; }
+            .chart-wrap { margin-top: 1.3rem; }
+        }
+        @media (max-width: 720px) {
+            .paper {
+                grid-template-columns: minmax(0, 1fr);
+                min-width: 760px;
+            }
+            .chart-left, .chart-wrap { grid-column: 1; grid-row: auto; }
+            .chart-wrap {
+                padding-left: 0;
+                border-left: 0;
+                margin-top: 1rem;
+            }
+            .bazi-run-row { flex-direction: column; gap: 0.15rem; }
+            .bazi-table { min-width: 760px; }
+            .result-content { align-items: flex-start; overflow-x: auto; }
+        }
+
+        /* Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+            backdrop-filter: blur(4px);
+        }
+        .modal-content {
+            background-color: var(--bg-card);
+            padding: 2rem;
+            border-radius: var(--radius-lg);
+            width: 400px;
+            box-shadow: var(--shadow-lg);
+            border: 1px solid var(--border-color);
+            animation: modalFadeIn 0.3s ease;
+        }
+        @keyframes modalFadeIn {
+            from { opacity: 0; transform: scale(0.95); }
+            to { opacity: 1; transform: scale(1); }
+        }
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+        .modal-header h3 { margin: 0; font-size: 1.25rem; }
+        .close-btn {
+            background: none; border: none;
+            font-size: 1.5rem; cursor: pointer;
+            color: var(--text-secondary);
+        }
+        .close-btn:hover { color: var(--text-main); }
+
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #9ca3af; }
+        [data-theme="dark"] ::-webkit-scrollbar-thumb { background: #4b5563; }
+        [data-theme="dark"] ::-webkit-scrollbar-thumb:hover { background: #6b7280; }
+
+        /* ===== 命理 tab 切换 ===== */
+        .mingli-tabs {
+            display: flex;
+            gap: 0.25rem;
+            align-items: center;
+            margin-right: 0.75rem;
+        }
+        .mingli-tab {
+            padding: 0.45rem 1.1rem;
+            font-size: 0.92rem;
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            background: transparent;
+            color: var(--text-secondary);
+            cursor: pointer;
+            text-decoration: none;
+            transition: all 0.2s;
+            white-space: nowrap;
+        }
+        .mingli-tab:hover { color: var(--primary-color); border-color: var(--primary-color); }
+        .mingli-tab.active {
+            color: #fff;
+            background-color: var(--primary-color);
+            border-color: var(--primary-color);
+            font-weight: 700;
+        }
+        .tab-panel { display: none; }
+        .tab-panel.active { display: block; }
+
+    </style>
+    <link rel="stylesheet" href="/static/css/tianji.css">
+    <script src="/static/js/tianji.js"></script>
+</head>
+<body>
+
+{% include '_header.html' %}
+
+<div class="main-wrapper">
+    <div class="container">
+        <!-- Left Panel -->
+        <div class="left-panel {% if not new_record %}collapsed{% else %}archive-modal{% endif %}" id="leftPanel">
+            <div class="panel-toolbar">
+                <span class="panel-toolbar-title">{% if edit_record %}修改命理档案{% elif new_record %}新增命理档案{% else %}命理档案{% endif %}</span>
+                {% if new_record %}<a class="btn-sm" href="/mingli?archive=1">← 返回档案</a>{% endif %}
+                <button type="button" class="close-btn" onclick="closeArchives()" title="关闭档案">&times;</button>
+            </div>
+            <div class="panel-body" id="leftBody">
+                {% if not new_record %}
+                <div class="records-block">
+                    <div class="records-header">
+                        <span class="panel-toolbar-title">命理档案</span>
+                        <a class="btn-sm" href="/mingli?new=1">＋ 新增</a>
+                    </div>
+                    <div id="records-content">
+                        <form method="GET" action="/mingli" class="records-search">
+                            <input type="text" name="q" value="{{ q }}" placeholder="搜索姓名 / 标签...">
+                            <button type="submit" class="btn-sm">搜索</button>
+                        </form>
+                        {% if records %}
+                        <div class="records-list">
+                            {% for r in records %}
+                               <div class="record-item {% if record_id and record_id == r.id %}current{% endif %}"
+                                   role="link" tabindex="0"
+                                   onclick="window.location.href='/mingli?record_id={{ r.id }}&tab={{ tab }}'"
+                                   onkeydown="if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); window.location.href='/mingli?record_id={{ r.id }}&tab={{ tab }}'; }">
+                                <div class="record-main">
+                                    <div class="record-name">{{ r.name or '未命名' }} <span style="font-weight:400;color:var(--text-secondary);font-size:0.78rem;">{{ r.gender }}</span></div>
+                                    <div class="record-time">{{ r.time }}</div>
+                                    {% if r.tags %}
+                                    <div class="record-tags">
+                                        {% for t in r.tags.split(',') %}{% if t.strip() %}<span class="record-tag">{{ t.strip() }}</span>{% endif %}{% endfor %}
+                                    </div>
+                                    {% endif %}
+                                </div>
+                                <div class="record-actions">
+                                    <a class="btn-sm" href="/mingli?edit_id={{ r.id }}&tab={{ tab }}" onclick="event.stopPropagation()">修改</a>
+                                    <button class="btn-sm btn-danger"
+                                            data-id="{{ r.id }}"
+                                            data-name="{{ r.name }}"
+                                        onclick="event.stopPropagation(); deleteMingliRecordFromButton(this)">删除</button>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        {% else %}
+                        <div class="records-empty">暂无记录，输入信息排盘后保存即可出现在这里</div>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endif %}
+
+                {% if new_record %}
+                <form method="POST" action="/mingli" id="mingliForm">
+                    <input type="hidden" name="edit_id" value="{{ edit_id|default('') }}">
+                    <input type="hidden" name="tab" value="{{ tab }}">
+                    <div class="form-group">
+                        <label>姓名 / 求测人</label>
+                        <input type="text" name="subject" value="{{ subject }}" placeholder="请输入姓名..." autocomplete="off">
+                    </div>
+
+                    <div class="form-group">
+                        <label>记录标签（逗号分隔，可选）</label>
+                        <input type="text" name="tags" id="tags_input" value="{{ tags }}" placeholder="例如：事业, 朋友, 2026" autocomplete="off">
+                    </div>
+
+                    <div class="form-group">
+                        <label>性别</label>
+                        <select name="gender">
+                            <option value="男" {% if gender == '男' %}selected{% endif %}>男</option>
+                            <option value="女" {% if gender == '女' %}selected{% endif %}>女</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label>公历出生时间</label>
+                        <div class="datetime-row">
+                            <div class="datetime-item">
+                                <input type="date" name="date" value="{{ date_str }}" required>
+                            </div>
+                            <div class="datetime-item small">
+                                <input type="number" name="hour" id="hour_input" min="0" max="23" value="{{ hour }}" placeholder="时" required>
+                            </div>
+                            <div class="datetime-item small">
+                                <input type="number" name="minute" id="minute_input" min="0" max="59" value="{{ minute }}" placeholder="分" required>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>真太阳时校正（分钟，可负值）</label>
+                        <input type="number" name="solar_minutes" id="solar_minutes" value="{{ solar_minutes or 0 }}" step="1">
+                        <div class="small-hint">手动输入校正分钟数，不做出生地自动校准；留 0 表示直接使用所填时间。</div>
+                    </div>
+
+                    <div class="checkbox-row">
+                        <input type="checkbox" name="hour_unknown" id="hour_unknown" {% if hour_unknown %}checked{% endif %} onchange="toggleHourUnknown()">
+                        <label for="hour_unknown">时柱未知（不排时柱）</label>
+                    </div>
+
+                    <div class="form-group">
+                        <button type="button" class="toggle-link" onclick="toggleCorrection()">手动校正四柱（可选）</button>
+                        <div id="correction-box" class="correction-box {% if is_history %}open{% endif %}">
+                            {% set tiangan = ['','甲','乙','丙','丁','戊','己','庚','辛','壬','癸'] %}
+                            {% set dizhi = ['','子','丑','寅','卯','辰','巳','午','未','申','酉','戌','亥'] %}
+                            <div class="correction-grid">
+                                <div class="correction-group">
+                                    <div class="correction-title">年柱</div>
+                                    <div class="correction-selects">
+                                        <select name="year_gan"><option value="">干</option>{% for t in tiangan[1:] %}<option value="{{t}}" {% if year_gan==t %}selected{% endif %}>{{t}}</option>{% endfor %}</select>
+                                        <select name="year_zhi"><option value="">支</option>{% for d in dizhi[1:] %}<option value="{{d}}" {% if year_zhi==d %}selected{% endif %}>{{d}}</option>{% endfor %}</select>
+                                    </div>
+                                </div>
+                                <div class="correction-group">
+                                    <div class="correction-title">月柱</div>
+                                    <div class="correction-selects">
+                                        <select name="month_gan"><option value="">干</option>{% for t in tiangan[1:] %}<option value="{{t}}" {% if month_gan==t %}selected{% endif %}>{{t}}</option>{% endfor %}</select>
+                                        <select name="month_zhi"><option value="">支</option>{% for d in dizhi[1:] %}<option value="{{d}}" {% if month_zhi==d %}selected{% endif %}>{{d}}</option>{% endfor %}</select>
+                                    </div>
+                                </div>
+                                <div class="correction-group">
+                                    <div class="correction-title">日柱</div>
+                                    <div class="correction-selects">
+                                        <select name="day_gan"><option value="">干</option>{% for t in tiangan[1:] %}<option value="{{t}}" {% if day_gan==t %}selected{% endif %}>{{t}}</option>{% endfor %}</select>
+                                        <select name="day_zhi"><option value="">支</option>{% for d in dizhi[1:] %}<option value="{{d}}" {% if day_zhi==d %}selected{% endif %}>{{d}}</option>{% endfor %}</select>
+                                    </div>
+                                </div>
+                                <div class="correction-group">
+                                    <div class="correction-title">时柱</div>
+                                    <div class="correction-selects">
+                                        <select name="hour_gan"><option value="">干</option>{% for t in tiangan[1:] %}<option value="{{t}}" {% if hour_gan==t %}selected{% endif %}>{{t}}</option>{% endfor %}</select>
+                                        <select name="hour_zhi"><option value="">支</option>{% for d in dizhi[1:] %}<option value="{{d}}" {% if hour_zhi==d %}selected{% endif %}>{{d}}</option>{% endfor %}</select>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="btn-group">
+                        <button type="submit" class="btn btn-primary">保存记录</button>
+                        <button type="submit" class="btn btn-secondary" formaction="/mingli" formmethod="POST">开始排盘</button>
+                        <button type="button" class="btn btn-secondary" onclick="window.location.href='/mingli'">重置</button>
+                    </div>
+                </form>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Center Panel -->
+        <div class="center-panel">
+            <div class="result-header">
+                <div class="mingli-tabs">
+                    <a class="mingli-tab {% if tab == 'bazi' %}active{% endif %}" href="/mingli?record_id={{ record_id or '' }}&tab=bazi">八字</a>
+                    <a class="mingli-tab {% if tab == 'ziwei' %}active{% endif %}" href="/mingli?record_id={{ record_id or '' }}&tab=ziwei">紫微斗数</a>
+                </div>
+                <div class="action-buttons">
+                    {% if is_history %}<span class="saved-note">已自动保存</span>{% endif %}
+                    {% if not new_record %}
+                    <button type="button" class="btn-ghost" onclick="openArchives()">档案</button>
+                    {% endif %}
+                    <button type="button" class="btn-ghost" onclick="saveImage()">存图</button>
+                </div>
+            </div>
+            <div class="result-content">
+                <!-- 八字视图 -->
+                <div class="tab-panel {% if tab == 'bazi' %}active{% endif %}" id="tab-bazi">
+                <div class="paper" id="result-capture">
+                    {% if error %}
+                    <div class="error-box">{{ error }}</div>
+                    {% endif %}
+                    {% if result_data %}
+                        {% set current_liuyue = result_data.liunian[0].liuyue[0] if result_data.liunian and result_data.liunian[0].liuyue else none %}
+                        <div class="paipan-header">
+                            <div class="pp-name">
+                                {{ result_data.subject or subject or '未命名' }}
+                                {% for t in tags.split(',') %}{% if t.strip() and t.strip() != '自己' %}<span class="tag-chip">{{ t.strip() }}</span>{% endif %}{% endfor %}
+                            </div>
+                            <div class="pp-date">{{ result_data.date_str }} · 农历{{ result_data.lunar_month_day }}</div>
+                            {% if result_data.solar_minutes != 0 or result_data.hour_unknown %}
+                            <div class="pp-ganzhi">
+                                {% if result_data.solar_minutes != 0 %}真太阳时：{{ result_data.effective_str }}（校正 {{ result_data.solar_minutes }} 分钟）{% endif %}
+                                {% if result_data.hour_unknown %}时柱未知，未纳入五行统计与命宫/身宫{% endif %}
+                            </div>
+                            {% endif %}
+                        </div>
+
+                        <div class="chart-left">
+                        <table class="bazi-table">
+                            <thead>
+                                <tr>
+                                    <th class="row-label">日期</th>
+                                    <th class="col-day">年柱</th>
+                                    <th class="col-day">月柱</th>
+                                    <th class="col-day">日柱</th>
+                                    <th class="col-day">时柱</th>
+                                    <th class="col-run">大运</th>
+                                    <th class="col-run">流年</th>
+                                    <th class="col-run">流月</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td class="row-label">干神</td>
+                                    {% for p in result_data.pillars %}<td class="shishen-cell c-{{ p.gan_wuxing }}">{% if loop.index0 == 2 %}元{{ result_data.gender }}{% else %}{{ p.gan_shishen }}{% endif %}</td>{% endfor %}
+                                    <td id="top-dayun-shishen" class="shishen-cell c-{{ result_data.dayun.list[0].gan_wuxing if result_data.dayun.list else '' }}">{{ result_data.dayun.list[0].shishen if result_data.dayun.list else '-' }}</td>
+                                    <td id="top-liunian-shishen" class="shishen-cell c-{{ result_data.liunian[0].gan_wuxing if result_data.liunian else '' }}">{{ result_data.liunian[0].shishen if result_data.liunian else '-' }}</td>
+                                    <td id="top-liuyue-shishen" class="shishen-cell c-{{ current_liuyue.gan_wuxing if current_liuyue else '' }}">{{ current_liuyue.shishen if current_liuyue else '-' }}</td>
+                                </tr>
+                                <tr>
+                                    <td class="row-label">天干</td>
+                                    {% for p in result_data.pillars %}
+                                    <td class="gan-cell{% if p.gan_wuxing %} c-{{ p.gan_wuxing }}{% endif %}">{{ p.gan }}</td>
+                                    {% endfor %}
+                                    <td id="top-dayun-gan" class="gan-cell c-{{ result_data.dayun.list[0].gan_wuxing if result_data.dayun.list else '木' }}">{{ result_data.dayun.list[0].ganzhi[0] if result_data.dayun.list else '-' }}</td>
+                                    <td id="top-liunian-gan" class="gan-cell c-{{ result_data.liunian[0].gan_wuxing if result_data.liunian else '木' }}">{{ result_data.liunian[0].ganzhi[0] if result_data.liunian else '-' }}</td>
+                                    <td id="top-liuyue-gan" class="gan-cell c-{{ current_liuyue.gan_wuxing if current_liuyue else '木' }}">{{ current_liuyue.ganzhi[0] if current_liuyue else '-' }}</td>
+                                </tr>
+                                <tr>
+                                    <td class="row-label">地支</td>
+                                    {% for p in result_data.pillars %}
+                                    <td class="zhi-cell{% if p.zhi_wuxing %} c-{{ p.zhi_wuxing }}{% endif %}">{{ p.zhi }}</td>
+                                    {% endfor %}
+                                    <td id="top-dayun-zhi" class="zhi-cell c-{{ result_data.dayun.list[0].zhi_wuxing if result_data.dayun.list else '木' }}">{{ result_data.dayun.list[0].ganzhi[1] if result_data.dayun.list else '-' }}</td>
+                                    <td id="top-liunian-zhi" class="zhi-cell c-{{ result_data.liunian[0].zhi_wuxing if result_data.liunian else '木' }}">{{ result_data.liunian[0].ganzhi[1] if result_data.liunian else '-' }}</td>
+                                    <td id="top-liuyue-zhi" class="zhi-cell c-{{ current_liuyue.zhi_wuxing if current_liuyue else '木' }}">{{ current_liuyue.ganzhi[1] if current_liuyue else '-' }}</td>
+                                </tr>
+                                <tr>
+                                    <td class="row-label">藏干</td>
+                                    {% for p in result_data.pillars %}
+                                    <td class="small-stat canggan-cell">
+                                        <span class="canggan-stack">{% if p.canggan %}{% for c in p.canggan %}<span class="c-{{ p.canggan_wuxing[loop.index0] }}">{{ c }}</span>{% endfor %}{% else %}-{% endif %}</span>
+                                    </td>
+                                    {% endfor %}
+                                    <td id="top-dayun-canggan" class="small-stat"><span class="canggan-stack">{% if result_data.dayun.list %}{% for c in result_data.dayun.list[0].canggan %}<span class="c-{{ result_data.dayun.list[0].canggan_wuxing[loop.index0] }}">{{ c }}</span>{% endfor %}{% else %}-{% endif %}</span></td>
+                                    <td id="top-liunian-canggan" class="small-stat"><span class="canggan-stack">{% if result_data.liunian %}{% for c in result_data.liunian[0].canggan %}<span class="c-{{ result_data.liunian[0].canggan_wuxing[loop.index0] }}">{{ c }}</span>{% endfor %}{% else %}-{% endif %}</span></td>
+                                    <td id="top-liuyue-canggan" class="small-stat"><span class="canggan-stack">{% if current_liuyue %}{% for c in current_liuyue.canggan %}<span class="c-{{ current_liuyue.canggan_wuxing[loop.index0] }}">{{ c }}</span>{% endfor %}{% else %}-{% endif %}</span></td>
+                                </tr>
+                                <tr>
+                                    <td class="row-label">支神</td>
+                                    {% for p in result_data.pillars %}<td class="small-stat"><span class="canggan-stack">{% if p.canggan_shishen %}{% for s in p.canggan_shishen %}<span class="canggan-shishen c-{{ p.canggan_wuxing[loop.index0] }}">{{ s }}</span>{% endfor %}{% else %}-{% endif %}</span></td>{% endfor %}
+                                    <td id="top-dayun-canggan-shishen" class="small-stat"><span class="canggan-stack">{% if result_data.dayun.list %}{% for s in result_data.dayun.list[0].canggan_shishen %}<span class="canggan-shishen c-{{ result_data.dayun.list[0].canggan_wuxing[loop.index0] }}">{{ s }}</span>{% endfor %}{% else %}-{% endif %}</span></td>
+                                    <td id="top-liunian-canggan-shishen" class="small-stat"><span class="canggan-stack">{% if result_data.liunian %}{% for s in result_data.liunian[0].canggan_shishen %}<span class="canggan-shishen c-{{ result_data.liunian[0].canggan_wuxing[loop.index0] }}">{{ s }}</span>{% endfor %}{% else %}-{% endif %}</span></td>
+                                    <td id="top-liuyue-canggan-shishen" class="small-stat"><span class="canggan-stack">{% if current_liuyue %}{% for s in current_liuyue.canggan_shishen %}<span class="canggan-shishen c-{{ current_liuyue.canggan_wuxing[loop.index0] }}">{{ s }}</span>{% endfor %}{% else %}-{% endif %}</span></td>
+                                </tr>
+                                <tr>
+                                    <td class="row-label">纳音</td>
+                                    {% for p in result_data.pillars %}<td class="small-stat nayin-{{ p.nayin[-1] }}">{{ p.nayin }}</td>{% endfor %}
+                                    <td id="top-dayun-nayin" class="small-stat nayin-{{ result_data.dayun.list[0].nayin[-1] if result_data.dayun.list else '' }}">{{ result_data.dayun.list[0].nayin if result_data.dayun.list else '-' }}</td>
+                                    <td id="top-liunian-nayin" class="small-stat nayin-{{ result_data.liunian[0].nayin[-1] if result_data.liunian else '' }}">{{ result_data.liunian[0].nayin if result_data.liunian else '-' }}</td>
+                                    <td id="top-liuyue-nayin" class="small-stat nayin-{{ current_liuyue.nayin[-1] if current_liuyue else '' }}">{{ current_liuyue.nayin if current_liuyue else '-' }}</td>
+                                </tr>
+                                <tr>
+                                    <td class="row-label">地势</td>
+                                    {% for p in result_data.pillars %}<td class="small-stat">{{ p.dishi }}</td>{% endfor %}
+                                    <td id="top-dayun-dishi" class="small-stat">{{ result_data.dayun.list[0].dishi if result_data.dayun.list else '-' }}</td>
+                                    <td id="top-liunian-dishi" class="small-stat">{{ result_data.liunian[0].dishi if result_data.liunian else '-' }}</td>
+                                    <td id="top-liuyue-dishi" class="small-stat">{{ current_liuyue.dishi if current_liuyue else '-' }}</td>
+                                </tr>
+                                <tr>
+                                    <td class="row-label">自坐</td>
+                                    {% for p in result_data.pillars %}<td class="small-stat">{{ p.zizuo }}</td>{% endfor %}
+                                    <td id="top-dayun-zizuo" class="small-stat">{{ result_data.dayun.list[0].zizuo if result_data.dayun.list else '-' }}</td>
+                                    <td id="top-liunian-zizuo" class="small-stat">{{ result_data.liunian[0].zizuo if result_data.liunian else '-' }}</td>
+                                    <td id="top-liuyue-zizuo" class="small-stat">{{ current_liuyue.zizuo if current_liuyue else '-' }}</td>
+                                </tr>
+                                <tr>
+                                    <td class="row-label">神煞</td>
+                                    {% for p in result_data.pillars %}
+                                    <td class="small-stat">
+                                        {% if p.shensha %}{% for s in p.shensha %}<span class="shensha-tag">{{ s }}</span>{% endfor %}{% else %}-{% endif %}
+                                    </td>
+                                    {% endfor %}
+                                    <td id="top-dayun-shensha" class="small-stat">{{ result_data.dayun.list[0].shensha | join('、') if result_data.dayun.list else '-' }}</td>
+                                    <td id="top-liunian-shensha" class="small-stat">{{ result_data.liunian[0].shensha | join('、') if result_data.liunian else '-' }}</td>
+                                    <td id="top-liuyue-shensha" class="small-stat">{{ current_liuyue.shensha | join('、') if current_liuyue else '-' }}</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                        </div>
+
+                        <div class="chart-wrap">
+                            <div class="bazi-run-row">
+                                <div><strong>起运：</strong>{{ result_data.dayun.direction }} · {{ result_data.dayun.start_age }}起运（{{ result_data.dayun.start_date }}）</div>
+                                <div><strong>交运：</strong>{{ result_data.dayun.direction }} · {{ result_data.dayun.list[0].age_start }}~{{ result_data.dayun.list[0].age_end }}岁</div>
+                            </div>
+                            <div class="chart-main">
+                                <div class="yun-row-stack">
+                                    <div class="yun-row-block">
+                                        <div class="yun-title">大运</div>
+                                        <div class="dayun-list">
+                                            {% for d in result_data.dayun.list %}
+                                            <div class="dayun-block" data-type="dayun" data-index="{{ loop.index0 }}" data-year-start="{{ d.year_start }}" data-year-end="{{ d.year_end }}" data-dishi="{{ d.dishi }}" data-zizuo="{{ d.zizuo }}" data-shensha="{{ d.shensha | join('、') or '-' }}" data-canggan="{{ d.canggan | join(',') }}" data-canggan-wuxing="{{ d.canggan_wuxing | join(',') }}" data-canggan-shishen="{{ d.canggan_shishen | join(',') }}" data-shishen="{{ d.shishen }}" data-nayin="{{ d.nayin }}" onclick="selectRunBlock(this)">
+                                                <div class="dy-age">{{ d.age_start }}~{{ d.age_end }}岁</div>
+                                                <div class="dy-year">{{ d.year_start }}起</div>
+                                                <div class="dy-gz-wrap">
+                                                    <span class="dy-gan c-{{ d.gan_wuxing }}">{{ d.ganzhi[0] }}</span>
+                                                    <span class="dy-zhi c-{{ d.zhi_wuxing }}">{{ d.ganzhi[1] }}</span>
+                                                </div>
+                                                <div class="dy-nayin nayin-{{ d.nayin[-1] }}">{{ d.nayin }}</div>
+                                            </div>
+                                            {% endfor %}
+                                        </div>
+                                        {% for d in result_data.dayun.list %}
+                                        <div class="yun-detail" id="dayun-detail-{{ loop.index0 }}">
+                                            <div class="yd-row">藏干：{% if d.canggan %}{% for c in d.canggan %}<span class="c-{{ d.canggan_wuxing[loop.index0] }}">{{ c }}</span> {% endfor %}{% else %}-{% endif %}（{{ d.canggan_shishen | join(' ') or '-' }}）</div>
+                                            <div class="yd-row">神煞：{{ d.shensha | join('、') or '-' }}</div>
+                                            <div class="yd-row">空亡：{{ d.xunkong }}</div>
+                                            <div class="yd-row">年份：{{ d.year_start }}-{{ d.year_end }}</div>
+                                        </div>
+                                        {% endfor %}
+                                    </div>
+                                    <div class="yun-row-block">
+                                        <div class="yun-title">流年</div>
+                                        <div class="liunian-grid">
+                                            {% for l in result_data.liunian %}
+                                            <div class="liunian-block" data-type="liunian" data-index="{{ loop.index0 }}" data-year="{{ l.year }}" data-liuyue='{{ l.liuyue | tojson }}' data-dishi="{{ l.dishi }}" data-zizuo="{{ l.zizuo }}" data-shensha="{{ l.shensha | join('、') or '-' }}" data-canggan="{{ l.canggan | join(',') }}" data-canggan-wuxing="{{ l.canggan_wuxing | join(',') }}" data-canggan-shishen="{{ l.canggan_shishen | join(',') }}" data-shishen="{{ l.shishen }}" data-nayin="{{ l.nayin }}" onclick="selectRunBlock(this)">
+                                                <div class="ln-year">{{ l.year }}</div>
+                                                <div class="ln-age">{{ l.age }}岁</div>
+                                                <div class="ln-gz-wrap">
+                                                    <span class="ln-gan c-{{ l.gan_wuxing }}">{{ l.ganzhi[0] }}</span>
+                                                    <span class="ln-zhi c-{{ l.zhi_wuxing }}">{{ l.ganzhi[1] }}</span>
+                                                </div>
+                                                <div class="ln-nayin nayin-{{ l.nayin[-1] }}">{{ l.nayin }}</div>
+                                            </div>
+                                            {% endfor %}
+                                        </div>
+                                        {% for l in result_data.liunian %}
+                                        <div class="yun-detail" id="liunian-detail-{{ loop.index0 }}">
+                                            <div class="yd-row">藏干：{% if l.canggan %}{% for c in l.canggan %}<span class="c-{{ l.canggan_wuxing[loop.index0] }}">{{ c }}</span> {% endfor %}{% else %}-{% endif %}（{{ l.canggan_shishen | join(' ') or '-' }}）</div>
+                                            <div class="yd-row">神煞：{{ l.shensha | join('、') or '-' }}</div>
+                                            <div class="yd-row">空亡：{{ l.xunkong }}</div>
+                                        </div>
+                                        {% endfor %}
+                                    </div>
+                                    <div class="yun-row-block">
+                                        <div class="yun-title">流月</div>
+                                        <div id="liuyue-grid" class="liuyue-grid"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <pre id="result-text" style="display:none;">{{ bazi_text }}</pre>
+                    {% else %}
+                        <div class="empty-state">
+                            <div style="font-size: 3rem; margin-bottom: 1rem;">☯</div>
+                            <p>点击“档案”查看已保存排盘，或点击“新增”建立新的命理档案</p>
+                        </div>
+                    {% endif %}
+                </div>
+                </div>
+
+                <!-- 紫微斗数视图 -->
+                <div class="tab-panel {% if tab == 'ziwei' %}active{% endif %}" id="tab-ziwei">
+                    <div class="zw-scope">
+                        <div class="zw-view" id="zwCapture">
+                            <div class="zw-toolbar" id="zwToolbar" style="display:none">
+                                <div class="zw-seg" id="zwScopeSelect">
+                                    <button type="button" data-scope="decadal" class="active">大限</button>
+                                    <button type="button" data-scope="yearly">流年</button>
+                                    <button type="button" data-scope="monthly">流月</button>
+                                    <button type="button" data-scope="daily">流日</button>
+                                    <button type="button" data-scope="hourly">流时</button>
+                                </div>
+                                <div class="zw-nav">
+                                    <button type="button" onclick="zwStep(-1)" title="上一个">&lsaquo;</button>
+                                    <span class="zw-nav-label" id="zwScopeLabel">&mdash;</span>
+                                    <button type="button" onclick="zwStep(1)" title="下一个">&rsaquo;</button>
+                                </div>
+                                <button type="button" class="zw-today" onclick="zwReset()">今天</button>
+                                <div class="zw-opts">
+                                    <label><input type="checkbox" id="zwShowAdj" checked> 杂曜</label>
+                                    <select id="zwShen12" title="宫位底部十二神">
+                                        <option value="changsheng12">长生十二神</option>
+                                        <option value="boshi12">博士十二神</option>
+                                        <option value="jiangqian12">将前十二神</option>
+                                        <option value="suiqian12">岁前十二神</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="zw-chart-wrap" id="zwChartWrap" style="display:none">
+                                <div class="zw-chart" id="zwChart">
+                                    <div class="zw-center" id="zwCenter"></div>
+                                </div>
+                            </div>
+
+                            <div class="zw-scope-detail" id="zwScopeDetail" style="display:none"></div>
+                            <div class="zw-detail" id="zwDetail" style="display:none"></div>
+
+                            <div class="zw-empty" id="zwEmpty">
+                                <div class="icon">紫</div>
+                                <p>紫微斗数排盘由浏览器端 iztro 完成，载入档案后自动排盘</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+<div id="archiveBackdrop" class="archive-backdrop" {% if new_record %}style="display:block;"{% endif %} onclick="closeArchives()"></div>
+
+<script>
+    // 当前命理档案（服务端注入，紫微与八字共用）
+    var MINGLI_RECORD = {{ record | tojson if record else 'null' }};
+
+    // Manual correction toggle
+    function toggleCorrection() {
+        document.getElementById('correction-box').classList.toggle('open');
+    }
+
+    // Collapsible records panel
+    function toggleRecords() {
+        const el = document.getElementById('records-content');
+        const open = el.style.display !== 'none';
+        el.style.display = open ? 'none' : 'block';
+        const arrow = document.getElementById('records-arrow');
+        if (arrow) arrow.textContent = open ? '▾' : '▴';
+    }
+
+    function openArchives() {
+        const panel = document.getElementById('leftPanel');
+        panel.classList.remove('collapsed');
+        panel.classList.add('archive-modal');
+        document.getElementById('archiveBackdrop').style.display = 'block';
+        const records = document.getElementById('records-content');
+        if (records && records.style.display === 'none') {
+            toggleRecords();
+        }
+    }
+
+    function closeArchives() {
+        const panel = document.getElementById('leftPanel');
+        panel.classList.add('collapsed');
+        panel.classList.remove('archive-modal');
+        document.getElementById('archiveBackdrop').style.display = 'none';
+    }
+
+    {% if open_archive %}
+    openArchives();
+    {% endif %}
+
+    // Dayun / Liunian interactive views
+    const selectedRun = { dayun: 0, liunianYear: null };
+
+    function buildCangganHtml(cangganStr, wuxingStr) {
+        const gans = (cangganStr || '').split(',').filter(Boolean);
+        const wuxing = (wuxingStr || '').split(',').filter(Boolean);
+        if (!gans.length) return '-';
+        return `<span class="canggan-stack">${gans.map((g, i) => `<span class="c-${wuxing[i] || '木'}">${g}</span>`).join('')}</span>`;
+    }
+
+    function buildStackHtml(valueStr, wuxingStr) {
+        const values = (valueStr || '').split(',').filter(Boolean);
+        const wuxing = (wuxingStr || '').split(',').filter(Boolean);
+        return values.length ? `<span class="canggan-stack">${values.map((value, index) => `<span class="canggan-shishen c-${wuxing[index] || '木'}">${value}</span>`).join('')}</span>` : '-';
+    }
+
+    let activeLiuyue = [];
+    let selectedLiuyueIndex = 0;
+
+    function updateTopLiuyue(month) {
+        if (!month) return;
+        const setText = (id, value) => {
+            const element = document.getElementById(id);
+            if (element) element.textContent = value || '-';
+        };
+        const setWuxing = (id, wuxing) => {
+            const element = document.getElementById(id);
+            if (element) {
+                element.classList.remove('c-木', 'c-火', 'c-土', 'c-金', 'c-水');
+                if (wuxing) element.classList.add(`c-${wuxing}`);
+            }
+        };
+        setText('top-liuyue-shishen', month.shishen);
+        setWuxing('top-liuyue-shishen', month.gan_wuxing);
+        setText('top-liuyue-gan', month.ganzhi[0]);
+        setWuxing('top-liuyue-gan', month.gan_wuxing);
+        setText('top-liuyue-zhi', month.ganzhi[1]);
+        setWuxing('top-liuyue-zhi', month.zhi_wuxing);
+        document.getElementById('top-liuyue-canggan').innerHTML = buildCangganHtml(month.canggan.join(','), month.canggan_wuxing.join(','));
+        document.getElementById('top-liuyue-canggan-shishen').innerHTML = buildStackHtml(month.canggan_shishen.join(','), month.canggan_wuxing.join(','));
+        setText('top-liuyue-nayin', month.nayin);
+        setText('top-liuyue-dishi', month.dishi);
+        setText('top-liuyue-zizuo', month.zizuo);
+        setText('top-liuyue-shensha', (month.shensha || []).join('、'));
+        document.querySelectorAll('.liuyue-block').forEach((node, index) => node.classList.toggle('selected-run', index === selectedLiuyueIndex));
+    }
+
+    function selectLiuyue(index) {
+        selectedLiuyueIndex = index;
+        updateTopLiuyue(activeLiuyue[index]);
+    }
+
+    function renderLiuyue(liunian) {
+        const grid = document.getElementById('liuyue-grid');
+        if (!grid || !liunian) return;
+        try { activeLiuyue = JSON.parse(liunian.liuyue || '[]'); } catch (error) { activeLiuyue = []; }
+        selectedLiuyueIndex = 0;
+        grid.innerHTML = activeLiuyue.map((item, index) => `
+            <div class="liuyue-block" onclick="selectLiuyue(${index})">
+                <div class="liuyue-jieqi">${item.jieqi || ''}</div>
+                <div class="liuyue-date" title="${item.jieqi_date || ''}">${item.jieqi_md || ''}</div>
+                <div class="liuyue-gz">
+                    <span class="c-${item.gan_wuxing}">${item.ganzhi[0]}</span>
+                    <span class="c-${item.zhi_wuxing}">${item.ganzhi[1]}</span>
+                </div>
+            </div>`).join('');
+        updateTopLiuyue(activeLiuyue[0]);
+    }
+
+    function updateTopRunInfo() {
+        const dayunList = document.querySelectorAll('.dayun-block');
+        const liunianList = document.querySelectorAll('.liunian-block');
+        const dayun = dayunList[selectedRun.dayun]?.dataset || null;
+        const dayunStart = dayun ? Number(dayun.yearStart) : null;
+        const dayunEnd = dayun ? Number(dayun.yearEnd) : null;
+        let visibleLiunian = Array.from(liunianList).filter(node => {
+            const year = Number(node.dataset.year);
+            return dayunStart === null || (year >= dayunStart && year <= dayunEnd);
+        });
+        liunianList.forEach(node => node.classList.toggle('is-hidden', !visibleLiunian.includes(node)));
+        if (!visibleLiunian.length) visibleLiunian = Array.from(liunianList);
+        if (selectedRun.liunianYear === null || !visibleLiunian.some(node => Number(node.dataset.year) === selectedRun.liunianYear)) {
+            selectedRun.liunianYear = Number(visibleLiunian[0]?.dataset.year);
+        }
+        const liunian = visibleLiunian.find(node => Number(node.dataset.year) === selectedRun.liunianYear)?.dataset || null;
+        renderLiuyue(liunian);
+
+        const dayunIndex = dayun ? Number(dayun.index) : 0;
+        const liunianIndex = liunian ? Number(liunian.index) : 0;
+
+        const topDayun = dayunList[dayunIndex];
+        const topLiu = liunianList[liunianIndex];
+
+        const applyWuxingClass = (target, sourceNode) => {
+            if (!target || !sourceNode) return;
+            target.classList.remove('c-木', 'c-火', 'c-土', 'c-金', 'c-水');
+            const wuxingClass = Array.from(sourceNode.classList).find(cls => cls.startsWith('c-'));
+            if (wuxingClass) target.classList.add(wuxingClass);
+        };
+        const applyNamedClass = (target, prefix, value) => {
+            if (!target) return;
+            Array.from(target.classList)
+                .filter(cls => cls.startsWith(prefix))
+                .forEach(cls => target.classList.remove(cls));
+            if (value) target.classList.add(prefix + value);
+        };
+
+        if (topDayun) {
+            const ganNode = topDayun.querySelector('.dy-gan');
+            const zhiNode = topDayun.querySelector('.dy-zhi');
+            const nayinNode = topDayun.querySelector('.dy-nayin');
+
+            const topGanEl = document.getElementById('top-dayun-gan');
+            const topZhiEl = document.getElementById('top-dayun-zhi');
+            const topShishenEl = document.getElementById('top-dayun-shishen');
+            const topNayinEl = document.getElementById('top-dayun-nayin');
+            const topShenshaEl = document.getElementById('top-dayun-shensha');
+            const topCangganEl = document.getElementById('top-dayun-canggan');
+            const topCangganShishenEl = document.getElementById('top-dayun-canggan-shishen');
+            const topDishiEl = document.getElementById('top-dayun-dishi');
+            const topZizuoEl = document.getElementById('top-dayun-zizuo');
+
+            if (topGanEl) {
+                topGanEl.textContent = ganNode ? ganNode.textContent : '-';
+                applyWuxingClass(topGanEl, ganNode);
+            }
+            if (topZhiEl) {
+                topZhiEl.textContent = zhiNode ? zhiNode.textContent : '-';
+                applyWuxingClass(topZhiEl, zhiNode);
+            }
+            if (topShishenEl) {
+                topShishenEl.textContent = dayun.shishen || '-';
+                applyWuxingClass(topShishenEl, ganNode);
+            }
+            if (topNayinEl) {
+                topNayinEl.textContent = nayinNode ? nayinNode.textContent : '-';
+                applyNamedClass(topNayinEl, 'nayin-', dayun.nayin ? dayun.nayin.slice(-1) : '');
+            }
+            if (topShenshaEl) topShenshaEl.textContent = dayun ? (dayun.shensha || '-') : '-';
+            if (topCangganEl) topCangganEl.innerHTML = dayun ? buildCangganHtml(dayun.canggan, dayun.cangganWuxing) : '-';
+            if (topCangganShishenEl) topCangganShishenEl.innerHTML = dayun ? buildStackHtml(dayun.cangganShishen, dayun.cangganWuxing) : '-';
+            if (topDishiEl) topDishiEl.textContent = dayun ? dayun.dishi : '-';
+            if (topZizuoEl) topZizuoEl.textContent = dayun ? dayun.zizuo : '-';
+        }
+
+        if (topLiu) {
+            const ganNode = topLiu.querySelector('.ln-gan');
+            const zhiNode = topLiu.querySelector('.ln-zhi');
+            const nayinNode = topLiu.querySelector('.ln-nayin');
+
+            const topGanEl = document.getElementById('top-liunian-gan');
+            const topZhiEl = document.getElementById('top-liunian-zhi');
+            const topShishenEl = document.getElementById('top-liunian-shishen');
+            const topNayinEl = document.getElementById('top-liunian-nayin');
+            const topShenshaEl = document.getElementById('top-liunian-shensha');
+            const topCangganEl = document.getElementById('top-liunian-canggan');
+            const topCangganShishenEl = document.getElementById('top-liunian-canggan-shishen');
+            const topDishiEl = document.getElementById('top-liunian-dishi');
+            const topZizuoEl = document.getElementById('top-liunian-zizuo');
+
+            if (topGanEl) {
+                topGanEl.textContent = ganNode ? ganNode.textContent : '-';
+                applyWuxingClass(topGanEl, ganNode);
+            }
+            if (topZhiEl) {
+                topZhiEl.textContent = zhiNode ? zhiNode.textContent : '-';
+                applyWuxingClass(topZhiEl, zhiNode);
+            }
+            if (topShishenEl) {
+                topShishenEl.textContent = liunian.shishen || '-';
+                applyWuxingClass(topShishenEl, ganNode);
+            }
+            if (topNayinEl) {
+                topNayinEl.textContent = nayinNode ? nayinNode.textContent : '-';
+                applyNamedClass(topNayinEl, 'nayin-', liunian.nayin ? liunian.nayin.slice(-1) : '');
+            }
+            if (topShenshaEl) topShenshaEl.textContent = liunian ? (liunian.shensha || '-') : '-';
+            if (topCangganEl) topCangganEl.innerHTML = liunian ? buildCangganHtml(liunian.canggan, liunian.cangganWuxing) : '-';
+            if (topCangganShishenEl) topCangganShishenEl.innerHTML = liunian ? buildStackHtml(liunian.cangganShishen, liunian.cangganWuxing) : '-';
+            if (topDishiEl) topDishiEl.textContent = liunian ? liunian.dishi : '-';
+            if (topZizuoEl) topZizuoEl.textContent = liunian ? liunian.zizuo : '-';
+        }
+
+        document.querySelectorAll('.dayun-block').forEach((node, idx) => {
+            node.classList.toggle('selected-run', idx === selectedRun.dayun);
+        });
+        document.querySelectorAll('.liunian-block').forEach(node => {
+            node.classList.toggle('selected-run', node === topLiu);
+        });
+    }
+
+    function selectRunBlock(node) {
+        const type = node.dataset.type;
+        const index = Number(node.dataset.index || 0);
+        if (type === 'dayun') {
+            selectedRun.dayun = index;
+            selectedRun.liunianYear = Number(node.dataset.yearStart);
+        } else if (type === 'liunian') {
+            selectedRun.liunianYear = Number(node.dataset.year);
+        }
+        updateTopRunInfo();
+    }
+
+    function toggleYunDetail(id) {
+        const el = document.getElementById(id);
+        if (el) el.style.display = el.style.display === 'none' ? 'block' : 'none';
+    }
+    updateTopRunInfo();
+
+    // Hour unknown toggle: disable time / solar correction inputs
+    function toggleHourUnknown() {
+        const checked = document.getElementById('hour_unknown').checked;
+        ['hour_input', 'minute_input', 'solar_minutes'].forEach(id => {
+            const el = document.getElementById(id);
+            if (el) {
+                el.disabled = checked;
+                el.classList.toggle('disabled-input', checked);
+            }
+        });
+    }
+    {% if hour_unknown %}
+    toggleHourUnknown();
+    {% endif %}
+
+    function deleteMingliRecordFromButton(button) {
+        deleteMingliRecord(button.dataset.id, button.dataset.name);
+    }
+    function deleteMingliRecord(recordId, name) {
+        const label = name ? `「${name}」` : `ID ${recordId}`;
+        if (!confirm(`确定删除命理档案 ${label} 吗？此操作不可恢复。`)) {
+            return;
+        }
+        fetch('/mingli/delete', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({record_id: recordId})
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (data.status === 'success') {
+                window.location.href = '/mingli';
+            } else {
+                alert('删除失败: ' + (data.message || '未知错误'));
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('删除出错: ' + error.message);
+        });
+    }
+
+    // Actions (only image export is kept; records auto-save on divination)
+    function saveImage() {
+        const ziweiTab = document.getElementById('tab-ziwei');
+        const ziweiOn = ziweiTab && ziweiTab.classList.contains('active');
+        const element = ziweiOn
+            ? document.getElementById('zwCapture')
+            : document.getElementById('result-capture');
+        if (!element) return;
+        html2canvas(element, {
+            backgroundColor: getComputedStyle(document.body).getPropertyValue('--bg-card')
+        }).then(canvas => {
+            const a = document.createElement('a');
+            a.href = canvas.toDataURL("image/png");
+            a.download = '命理排盘_' + new Date().toISOString().slice(0,10) + '.png';
+            a.click();
+        });
+    }
+
+</script>
+<script src="/static/js/ziwei.js"></script>
+
+</body>
+</html>

@@ -1,0 +1,1469 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>天机系统 · 奇门排盘</title>
+    <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
+    <style>
+        :root {
+            --ink: #2c2c2c;
+            --ink-light: #5a5a5a;
+            --ink-faint: #999;
+            --paper: #f5f0e8;
+            --paper-card: #faf7f0;
+            --paper-dark: #ebe4d5;
+            --vermillion: #c0403a;
+            --vermillion-light: #d4685e;
+            --gold: #b8963e;
+            --gold-light: #d4b85c;
+            --jade: #5a8a6a;
+            --jade-light: #7aaa8a;
+            --border-ink: #d4cbb8;
+            --border-light: #e5ddd0;
+            --shadow-sm: 0 2px 8px rgba(60,30,10,0.06);
+            --shadow-md: 0 4px 16px rgba(60,30,10,0.08);
+            --radius-sm: 4px;
+            --radius-md: 8px;
+            --radius-lg: 12px;
+            /* 表面与渐变（供深浅主题切换） */
+            --surface: #fffef9;
+            --surface-alt: #fef9f8;
+            --surface-glass: rgba(250,247,240,0.9);
+            --surface-cell: rgba(250,247,240,0.97);
+            --bg-gradient: linear-gradient(180deg, #faf7f0 0%, #f3efe4 100%);
+            --halo: rgba(250,247,240,0.95);
+            --gold-text: #8b6914;
+        }
+
+        [data-theme="dark"] {
+            --ink: #e8e2d5;
+            --ink-light: #b9b1a4;
+            --ink-faint: #8a8377;
+            --paper: #1c1a18;
+            --paper-card: #262320;
+            --paper-dark: #332e29;
+            --vermillion: #c95151;
+            --vermillion-light: #d4685e;
+            --gold: #c9a850;
+            --gold-light: #d4b85c;
+            --jade: #6f9c7e;
+            --jade-light: #7aaa8a;
+            --border-ink: #45403a;
+            --border-light: #38332e;
+            --shadow-sm: 0 2px 8px rgba(0,0,0,0.35);
+            --shadow-md: 0 4px 16px rgba(0,0,0,0.45);
+            --surface: #302b27;
+            --surface-alt: #37312c;
+            --surface-glass: rgba(38,35,32,0.9);
+            --surface-cell: rgba(38,35,32,0.97);
+            --bg-gradient: linear-gradient(180deg, #262320 0%, #201d1a 100%);
+            --halo: rgba(38,35,32,0.95);
+            --gold-text: #d4b85c;
+            background-color: var(--paper);
+        }
+
+        [data-theme="dark"] .cell-earth { background-color: var(--surface-cell); }
+        [data-theme="dark"] .cell-man { background-color: rgba(111,156,126,0.14); }
+        [data-theme="dark"] .cell-man.ji { background-color: rgba(111,156,126,0.2); }
+        [data-theme="dark"] .cell-heaven { background-color: rgba(201,168,80,0.12); }
+        [data-theme="dark"] .cell-god { background-color: rgba(201,81,81,0.12); }
+        [data-theme="dark"] .cell-man.xiong { background-color: rgba(201,81,81,0.14); }
+        [data-theme="dark"] ::-webkit-scrollbar-thumb { background: #4b5563; }
+        [data-theme="dark"] ::-webkit-scrollbar-thumb:hover { background: #6b7280; }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: 'Noto Serif SC', 'STSong', 'SimSun', 'KaiTi', 'Microsoft YaHei', serif;
+            background-color: var(--paper);
+            background-image:
+                radial-gradient(ellipse at 20% 50%, rgba(184,150,62,0.04) 0%, transparent 50%),
+                radial-gradient(ellipse at 80% 20%, rgba(90,138,106,0.03) 0%, transparent 50%);
+            color: var(--ink);
+            line-height: 1.7;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        /* Main Layout */
+        .main-container {
+            display: flex;
+            flex: 1;
+            overflow: hidden;
+            gap: 1.2rem;
+            padding: 1.2rem;
+            max-width: 1600px;
+            margin: 0 auto;
+            width: 100%;
+        }
+
+        /* Left Panel */
+        .left-panel {
+            width: 340px;
+            background: var(--paper-card);
+            border: 1px solid var(--border-light);
+            border-radius: var(--radius-md);
+            box-shadow: var(--shadow-sm);
+            display: flex;
+            flex-direction: column;
+            flex-shrink: 0;
+            overflow-y: auto;
+            position: relative;
+        }
+        .left-panel::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 12px; right: 12px;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, var(--gold), transparent);
+            opacity: 0.5;
+        }
+        .panel-content { padding: 1.5rem 1.5rem 1rem; }
+
+        .form-group { margin-bottom: 1rem; }
+        .form-group label {
+            display: block;
+            margin-bottom: 0.4rem;
+            font-size: 0.85rem;
+            color: var(--ink-light);
+            letter-spacing: 0.08em;
+            font-weight: 500;
+        }
+        .form-group select, .form-group input {
+            width: 100%;
+            padding: 0.55rem 0.8rem;
+            border: 1px solid var(--border-ink);
+            border-radius: var(--radius-sm);
+            background: var(--surface);
+            color: var(--ink);
+            font-size: 0.9rem;
+            font-family: inherit;
+            transition: border-color 0.2s;
+            appearance: none;
+            -webkit-appearance: none;
+        }
+        .form-group select {
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%235a5a5a' fill='none' stroke-width='1.5'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 0.8rem center;
+            padding-right: 2rem;
+        }
+        .form-group select:focus, .form-group input:focus {
+            outline: none;
+            border-color: var(--vermillion);
+            box-shadow: 0 0 0 2px rgba(192,64,58,0.08);
+        }
+
+        /* Right Panel */
+        .right-panel {
+            flex: 1;
+            background: var(--paper-card);
+            border: 1px solid var(--border-light);
+            border-radius: var(--radius-md);
+            box-shadow: var(--shadow-sm);
+            overflow-y: auto;
+            padding: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        /* Info Items */
+        .info-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            margin-bottom: 1.2rem;
+            background: var(--surface);
+            padding: 1rem 1.2rem;
+            border-radius: var(--radius-sm);
+            border: 1px solid var(--border-light);
+        }
+        .info-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.85rem;
+            padding: 0.35rem 0;
+            border-bottom: 1px dotted var(--border-light);
+        }
+        .info-item:last-child { border-bottom: none; }
+        .info-item strong {
+            color: var(--ink-faint);
+            font-weight: 400;
+            letter-spacing: 0.05em;
+        }
+        .info-item span {
+            font-weight: 500;
+            color: var(--ink);
+            text-align: right;
+        }
+
+        /* Time Controls */
+        .time-controls {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0.5rem;
+            margin-bottom: 1.2rem;
+        }
+        .btn {
+            padding: 0.5rem 0.8rem;
+            border: 1px solid var(--border-ink);
+            border-radius: var(--radius-sm);
+            background: var(--surface);
+            color: var(--ink);
+            cursor: pointer;
+            font-size: 0.85rem;
+            font-family: inherit;
+            letter-spacing: 0.05em;
+            transition: all 0.2s;
+            text-align: center;
+        }
+        .btn:hover {
+            border-color: var(--vermillion);
+            color: var(--vermillion);
+            background: var(--surface-alt);
+        }
+        .btn.active {
+            background: var(--vermillion);
+            color: #fff;
+            border-color: var(--vermillion);
+        }
+        .btn-full { grid-column: span 2; }
+
+        /* 3D Viewport */
+        .qimen-3d-viewport {
+            perspective: 1500px;
+            height: 80vh;
+            min-height: 600px;
+            width: 100%;
+            max-width: 1200px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            background:
+                radial-gradient(ellipse at center, rgba(184,150,62,0.06) 0%, transparent 60%),
+                var(--bg-gradient);
+            overflow: hidden;
+            border-radius: var(--radius-md);
+            margin-bottom: 1.2rem;
+            position: relative;
+            border: 1px solid var(--border-light);
+            cursor: grab;
+            user-select: none;
+            -webkit-user-select: none;
+            touch-action: none;
+            contain: layout paint;
+        }
+        .qimen-3d-viewport:active { cursor: grabbing; }
+        .qimen-3d-viewport.is-dragging { cursor: grabbing; }
+
+        .qimen-3d-stage {
+            position: relative;
+            width: 550px;
+            height: 550px;
+            transform-style: preserve-3d;
+            transform: rotateX(55deg) rotateZ(-25deg);
+            /* 拖拽期间不加过渡，避免每次位移都被 transitional 插值拖后腿 */
+            will-change: transform;
+            backface-visibility: hidden;
+        }
+        /* 仅在复位/切换视角时启用平滑过渡 */
+        .qimen-3d-stage.is-settling {
+            transition: transform 0.28s cubic-bezier(0.22, 0.61, 0.36, 1);
+        }
+
+        .layer {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            grid-template-rows: repeat(3, 1fr);
+            gap: 10px;
+            transform-style: preserve-3d;
+            pointer-events: none;
+            backface-visibility: hidden;
+        }
+
+        .layer-earth { transform: translateZ(0px); }
+        .layer-man { transform: translateZ(80px); }
+        .layer-heaven { transform: translateZ(160px); }
+        .layer-god { transform: translateZ(240px); }
+
+        .layer-label {
+            position: absolute;
+            left: -60px;
+            top: 50%;
+            transform: translateY(-50%) rotateZ(90deg);
+            font-weight: 400;
+            color: var(--ink-faint);
+            font-size: 0.9rem;
+            letter-spacing: 0.15em;
+        }
+
+        .cell-3d {
+            border-radius: 6px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+            box-shadow: 0 1px 0 rgba(60,30,10,0.08), 0 2px 0 rgba(60,30,10,0.04);
+            border: 1px solid rgba(60,30,10,0.06);
+            transition: background-color 0.25s ease, border-color 0.25s ease, color 0.25s ease, box-shadow 0.25s ease;
+            background-color: transparent;
+            backface-visibility: hidden;
+        }
+
+        .cell-earth {
+            background-color: var(--surface-cell);
+            color: var(--ink-faint);
+            box-shadow: 0 2px 6px rgba(60,30,10,0.06);
+            border: 1px solid var(--border-light);
+        }
+        .cell-man {
+            background-color: rgba(90,138,106,0.04);
+            color: var(--ink);
+            font-weight: 500;
+            font-size: 1.15rem;
+            border: 1px solid rgba(90,138,106,0.12);
+        }
+        .cell-heaven {
+            background-color: rgba(184,150,62,0.06);
+            color: var(--gold-text);
+            border: 1px solid rgba(184,150,62,0.15);
+        }
+        .cell-god {
+            background-color: rgba(192,64,58,0.04);
+            color: var(--vermillion);
+            font-weight: 500;
+            border: 1px solid rgba(192,64,58,0.12);
+        }
+
+        .cell-man.ji { border: 2px solid rgba(90,138,106,0.35); background-color: rgba(90,138,106,0.06); }
+        .cell-man.xiong { border: 2px solid rgba(192,64,58,0.3); background-color: rgba(192,64,58,0.04); }
+
+        .gong-name, .gong-dir, .di-pan-gan, .tian-pan-gan, .jiu-xing, .ba-shen, .ba-men {
+            text-shadow: 0 0 2px var(--halo);
+            z-index: 1;
+        }
+
+        .gong-num {
+            position: absolute;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 3.5rem;
+            color: var(--ink);
+            opacity: 0.04;
+            font-weight: 700;
+            z-index: 0;
+            text-shadow: none;
+            font-family: 'KaiTi', 'STKaiti', serif;
+        }
+        .gong-name { position: absolute; top: 3px; left: 6px; font-size: 0.7rem; opacity: 0.5; letter-spacing: 0.05em; }
+        .gong-dir { position: absolute; top: 3px; right: 6px; font-size: 0.7rem; opacity: 0.5; }
+        .di-pan-gan { position: absolute; bottom: 10px; right: 8px; font-size: 1.05rem; font-weight: 600; }
+        .tian-pan-gan { position: absolute; top: 18px; right: 8px; font-size: 1.05rem; font-weight: 600; }
+        .jiu-xing { position: absolute; bottom: 4px; left: 6px; font-size: 1.05rem; font-weight: 600; }
+        .ba-shen { position: absolute; top: 4px; left: 50%; transform: translateX(-50%); font-size: 1.05rem; font-weight: 600; }
+        .ba-men { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 1.15rem; font-weight: 600; }
+
+        /* Controls 3D */
+        .controls-3d {
+            position: absolute;
+            bottom: 1rem;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 0.8rem;
+            background: var(--surface-glass);
+            padding: 0.4rem 1rem;
+            border-radius: 20px;
+            backdrop-filter: blur(6px);
+            border: 1px solid var(--border-light);
+        }
+        .layer-toggles { display: flex; gap: 0.4rem; align-items: center; }
+        .layer-toggle-btn {
+            font-size: 0.75rem;
+            cursor: pointer;
+            padding: 0.2rem 0.5rem;
+            border-radius: 3px;
+            background: var(--paper-dark);
+            color: var(--ink-faint);
+            letter-spacing: 0.05em;
+            border: 1px solid transparent;
+            transition: all 0.2s;
+        }
+        .layer-toggle-btn.active {
+            background: var(--vermillion);
+            color: #fff;
+            border-color: var(--vermillion);
+        }
+
+        /* Modal */
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(30,15,5,0.4); z-index: 100; justify-content: center; align-items: center; }
+        .modal.show { display: flex; }
+        .modal-content {
+            background: var(--paper-card);
+            padding: 2rem;
+            border-radius: var(--radius-md);
+            width: 400px;
+            max-width: 90%;
+            box-shadow: var(--shadow-md);
+            border: 1px solid var(--border-light);
+        }
+        .modal-header { display: flex; justify-content: space-between; margin-bottom: 1.5rem; }
+        .modal-header h3 { font-weight: 400; letter-spacing: 0.1em; font-size: 1.1rem; }
+        .close-btn { background: none; border: none; font-size: 1.5rem; cursor: pointer; color: var(--ink-faint); }
+        .modal-footer { display: flex; justify-content: flex-end; gap: 1rem; margin-top: 1.5rem; }
+
+        @media (max-width: 768px) {
+            .main-container { flex-direction: column; overflow-y: auto; }
+            .left-panel { width: 100%; max-height: none; overflow: visible; }
+            .right-panel { min-height: 500px; }
+            .qimen-3d-viewport { height: 400px; }
+            .qimen-3d-stage { width: 280px; height: 280px; }
+        }
+
+        /* Record List */
+        .record-list {
+            max-height: 260px;
+            overflow-y: auto;
+            border: 1px solid var(--border-light);
+            border-radius: var(--radius-sm);
+            background: var(--surface);
+        }
+        .record-item {
+            display: block;
+            padding: 0.5rem 0.7rem;
+            border-bottom: 1px solid var(--border-light);
+            text-decoration: none;
+            color: var(--ink);
+            transition: background-color 0.15s;
+        }
+        .record-item:last-child { border-bottom: none; }
+        .record-item:hover { background: var(--paper-dark); }
+        .record-item.active {
+            background: var(--paper-dark);
+            border-left: 3px solid var(--vermillion);
+        }
+        .record-item .rec-line1 { display: block; font-size: 0.82rem; }
+        .record-item .rec-line2 {
+            display: block;
+            font-size: 0.75rem;
+            color: var(--ink-light);
+        }
+        .record-item .rec-line3 {
+            display: block;
+            font-size: 0.72rem;
+            color: var(--ink-faint);
+        }
+        .record-empty {
+            padding: 1rem;
+            text-align: center;
+            font-size: 0.8rem;
+            color: var(--ink-faint);
+        }
+        .form-group input[type="text"],
+        .form-group textarea {
+            width: 100%;
+            padding: 0.45rem 0.6rem;
+            border: 1px solid var(--border-light);
+            border-radius: var(--radius-sm);
+            font-family: inherit;
+            font-size: 0.88rem;
+            color: var(--ink);
+            background: var(--surface);
+            resize: vertical;
+        }
+        .form-group input[type="text"]:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: var(--gold);
+        }
+        .alert-error {
+            margin-bottom: 0.8rem;
+            padding: 0.5rem 0.7rem;
+            border: 1px solid var(--vermillion-light);
+            border-radius: var(--radius-sm);
+            background: rgba(192, 64, 58, 0.08);
+            color: var(--vermillion);
+            font-size: 0.82rem;
+        }
+        .field-required {
+            margin-left: 0.35rem;
+            font-size: 0.68rem;
+            font-weight: 400;
+            letter-spacing: 0.04em;
+            color: var(--vermillion);
+        }
+        .info-item.question-item span {
+            text-align: left;
+            font-size: 0.8rem;
+            line-height: 1.55;
+            font-weight: 600;
+            color: var(--ink);
+        }
+        .record-item .rec-question {
+            display: block;
+            font-size: 0.74rem;
+            line-height: 1.4;
+            color: var(--ink-light);
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        /* 盘面标注：暗干（左上第二行）、格局与驿马（底部居中） */
+        .an-gan {
+            position: absolute;
+            top: 18px; left: 6px;
+            font-size: 0.68rem;
+            letter-spacing: 0.02em;
+            color: var(--gold-text);
+            opacity: 0.82;
+            z-index: 1;
+            text-shadow: 0 0 2px var(--halo);
+        }
+        .mark-strip {
+            position: absolute;
+            bottom: 3px; left: 50%;
+            transform: translateX(-50%);
+            display: flex; gap: 2px;
+            z-index: 2;
+            white-space: nowrap;
+        }
+        .mark-chip {
+            display: inline-block;
+            min-width: 13px;
+            padding: 0 2px;
+            font-size: 0.62rem;
+            line-height: 1.35;
+            text-align: center;
+            border-radius: 3px;
+            border: 1px solid var(--border-ink);
+            background: transparent;
+            color: var(--ink-faint);
+            opacity: 0.88;
+            cursor: help;
+        }
+        .mark-chip.lv-xiong { border-color: rgba(192,64,58,0.42); color: var(--vermillion); }
+        .mark-chip.lv-ji { border-color: rgba(90,138,106,0.45); color: var(--jade); }
+        .mark-chip.lv-ping { border-color: rgba(184,150,62,0.4); color: var(--gold-text); }
+        .qimen-3d-stage.hide-marks .an-gan,
+        .qimen-3d-stage.hide-marks .mark-strip { display: none; }
+
+        .info-item.note-item { flex-direction: column; align-items: stretch; gap: 0.25rem; }
+        .info-item.note-item span {
+            text-align: left;
+            font-size: 0.74rem;
+            line-height: 1.55;
+            font-weight: 400;
+            color: var(--ink-light);
+        }
+        .info-item.jump-item { cursor: pointer; }
+        .info-item.jump-item:hover span { color: var(--vermillion); }
+        .info-item.jump-item::after {
+            content: '\203A';
+            margin-left: 0.35rem;
+            color: var(--gold-text);
+            font-size: 0.85rem;
+        }
+
+        .mark-panel, .opt-panel {
+            border: 1px solid var(--border-light);
+            border-radius: var(--radius-sm);
+            background: var(--surface);
+            font-size: 0.8rem;
+        }
+        .mark-panel > summary, .opt-panel > summary {
+            cursor: pointer;
+            padding: 0.5rem 0.65rem;
+            color: var(--ink-light);
+            letter-spacing: 0.06em;
+            list-style: none;
+            user-select: none;
+        }
+        .mark-panel > summary::-webkit-details-marker,
+        .opt-panel > summary::-webkit-details-marker { display: none; }
+        .mark-panel > summary::before, .opt-panel > summary::before {
+            content: '\25B8';
+            margin-right: 0.45rem;
+            color: var(--gold-text);
+        }
+        .mark-panel[open] > summary::before,
+        .opt-panel[open] > summary::before { content: '\25BE'; }
+        .mark-panel-body { padding: 0 0.65rem 0.7rem; max-height: 250px; overflow-y: auto; }
+        .mark-legend { display: flex; flex-wrap: wrap; gap: 0.2rem 0.55rem; margin-bottom: 0.55rem; }
+        .mark-legend span { font-size: 0.72rem; color: var(--ink-faint); }
+        .mark-legend b { color: var(--gold-text); font-weight: 600; }
+        .mark-row {
+            padding: 0.35rem 0;
+            border-top: 1px dashed var(--border-light);
+            font-size: 0.74rem;
+            line-height: 1.6;
+            color: var(--ink-light);
+        }
+        .mark-row strong { color: var(--ink); font-weight: 600; }
+        .mark-row.qf { color: var(--ink-faint); }
+
+        .opt-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0 0.7rem;
+            padding: 0 0.65rem;
+        }
+        .opt-grid .form-group { margin-bottom: 0.7rem; }
+        .opt-grid .form-group label { font-size: 0.76rem; margin-bottom: 0.25rem; }
+        .opt-grid .form-group select,
+        .opt-grid .form-group input { padding: 0.4rem 0.55rem; font-size: 0.82rem; }
+        .opt-hint {
+            margin: 0 0.65rem 0.65rem;
+            font-size: 0.72rem;
+            line-height: 1.65;
+            color: var(--ink-faint);
+        }
+        @media (max-width: 560px) {
+            .opt-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+    <link rel="stylesheet" href="/static/css/tianji.css">
+    <script src="/static/js/tianji.js"></script>
+</head>
+<body>
+    {% include '_header.html' %}
+
+    <div class="main-container">
+        <!-- Left Panel -->
+        <div class="left-panel">
+            <div class="panel-content">
+                {% if error %}<div class="alert-error">{{ error }}</div>{% endif %}
+                <div class="form-group">
+                    <label>排盘方式</label>
+                    <select id="panMethod" onchange="changeMethod(this.value)">
+                        <option value="时家" {{ 'selected' if qimen.basicInfo and qimen.basicInfo.method == '时家' else '' }}>时家奇门</option>
+                        <option value="日家" {{ 'selected' if qimen.basicInfo and qimen.basicInfo.method == '日家' else '' }}>日家奇门</option>
+                        <option value="月家" {{ 'selected' if qimen.basicInfo and qimen.basicInfo.method == '月家' else '' }}>月家奇门</option>
+                        <option value="年家" {{ 'selected' if qimen.basicInfo and qimen.basicInfo.method == '年家' else '' }}>年家奇门</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label>时间控制</label>
+                    <div class="time-controls">
+                        <button class="btn" onclick="changeTime(-1)">上一局</button>
+                        <button class="btn" onclick="changeTime(1)">下一局</button>
+                        <button class="btn btn-full active" onclick="resetTime()">当前时间</button>
+                        <button class="btn btn-full" onclick="openModal()">自定义排盘</button>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>保存记录</label>
+                    <div class="time-controls">
+                        <button class="btn active" onclick="openSaveModal()">保存此盘</button>
+                        <button class="btn" onclick="toggleBasis()" title="展开盘面标注与起局依据">盘面依据</button>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>基本信息</label>
+                    <div class="info-list">
+                        {% if question is defined and question %}
+                        <div class="info-item note-item question-item">
+                            <strong>问事</strong> <span id="panQuestion">{{ question }}</span>
+                        </div>
+                        {% endif %}
+                        <div class="info-item">
+                            <strong>公历</strong> <span id="solarDate">{{ qimen.basicInfo.date if qimen.basicInfo else '' }}</span>
+                        </div>
+                        <div class="info-item">
+                            <strong>农历</strong> <span id="lunarDate">{{ qimen.basicInfo.lunarDate if qimen.basicInfo else '' }}</span>
+                        </div>
+                        <div class="info-item">
+                            <strong>四柱</strong>
+                            <span>
+                                <span id="sizhu-year">{{ qimen.siZhu.year if qimen.siZhu else '' }}</span>
+                                <span id="sizhu-month">{{ qimen.siZhu.month if qimen.siZhu else '' }}</span>
+                                <span id="sizhu-day">{{ qimen.siZhu.day if qimen.siZhu else '' }}</span>
+                                <span id="sizhu-time">{{ qimen.siZhu.time if qimen.siZhu else '' }}</span>
+                            </span>
+                        </div>
+                        <div class="info-item">
+                            <strong>局数</strong> <span id="juShu" title="{{ qimen.juShu.note if qimen.juShu and qimen.juShu.note else '' }}">{{ qimen.juShu.fullName if qimen.juShu else '' }}</span>
+                        </div>
+                        <div class="info-item">
+                            <strong>旬首</strong> <span id="xunShou">{{ qimen.xunShou if qimen.xunShou else '' }}</span>
+                        </div>
+                        <div class="info-item">
+                            <strong>值符</strong> <span id="zhiFu" title="{{ qimen.zhiFuXingNote if qimen.zhiFuXingNote else '' }}">{{ qimen.zhiFuXing if qimen.zhiFuXing else '' }}({{ qimen.zhiFuGong if qimen.zhiFuGong else '' }}宫)</span>
+                        </div>
+                        <div class="info-item">
+                            <strong>值使</strong> <span id="zhiShi">{{ qimen.zhiShiMen if qimen.zhiShiMen else '' }}({{ qimen.zhiShiGong if qimen.zhiShiGong else '' }}宫)</span>
+                        </div>
+                        <div class="info-item note-item">
+                            <strong>取法</strong>
+                            <span id="timeNote" title="{{ qimen.basicInfo.timeNote if qimen.basicInfo else '' }}">{{ qimen.basicInfo.timeNote if qimen.basicInfo else '' }}</span>
+                        </div>
+                        <div class="info-item jump-item" onclick="jumpToMarks()" title="展开下方「盘面标注与起局依据」">
+                            <strong>格局</strong> <span id="markSummary">{{ qimen.markSummary if qimen.markSummary else '' }}</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <details class="mark-panel" id="markPanel">
+                        <summary>盘面标注与起局依据</summary>
+                        <div class="mark-panel-body">
+                            <div class="mark-legend" id="markLegend">
+                                {% for g in qimen.geJuLegend %}
+                                <span title="{{ g.desc }}"><b>{{ g.key }}</b> {{ g.name }}</span>
+                                {% endfor %}
+                            </div>
+                            <div id="markDetail">
+                                {% for i in ['1', '2', '3', '4', '5', '6', '7', '8', '9'] %}
+                                {% if qimen.jiuGongAnalysis[i].marks %}
+                                <div class="mark-row"><strong>{{ qimen.jiuGongAnalysis[i].gongName }}{{ i }}宫</strong> · {{ qimen.jiuGongAnalysis[i].geJuText }}</div>
+                                {% endif %}
+                                {% endfor %}
+                                <div class="mark-row qf"><strong>暗干</strong> · {{ qimen.anGanRule if qimen.anGanRule else '' }}</div>
+                                {% if qimen.yiMa %}<div class="mark-row qf"><strong>驿马</strong> · {{ qimen.yiMa.rule }}</div>{% endif %}
+                                <div class="mark-row qf"><strong>局数取法</strong> · {{ qimen.juShu.note if qimen.juShu and qimen.juShu.note else '' }}</div>
+                                {% if qimen.timeInfo and qimen.timeInfo.jieQiAt %}<div class="mark-row qf"><strong>节气交接</strong> · {{ qimen.timeInfo.jieQi }} {{ qimen.timeInfo.jieQiAt }}</div>{% endif %}
+                                {% if qimen.zhiFuXingNote %}<div class="mark-row qf"><strong>中宫值符</strong> · {{ qimen.zhiFuXingNote }}</div>{% endif %}
+                                <div class="mark-row qf"><strong>流派口径</strong> · 月家值使依《奇门遁甲统宗》按九宫固定地支宫加临（非「月支落二宫」一说）</div>
+                            </div>
+                        </div>
+                    </details>
+                </div>
+
+                {% if record_id %}
+                <div class="form-group">
+                    <label>问事</label>
+                    <textarea id="qimenQuestion" rows="2" placeholder="补记所问何事">{{ question if question is defined and question else '' }}</textarea>
+                </div>
+                <div class="form-group">
+                    <label>备注</label>
+                    <textarea id="qimenRemarks" rows="3">{{ remarks }}</textarea>
+                    <div class="time-controls" style="margin-top:0.5rem">
+                        <button class="btn" onclick="saveQimenRemarks()">保存记录</button>
+                        <button class="btn" onclick="deleteQimenRecord()">删除记录</button>
+                    </div>
+                </div>
+                {% endif %}
+
+                <div class="form-group">
+                    <label>历史记录</label>
+                    <div class="record-list">
+                        {% for r in records %}
+                        <a class="record-item {{ 'active' if record_id == r.id else '' }}"
+                           href="/qimen?record_id={{ r.id }}">
+                            <span class="rec-line1">{{ r.time }}</span>
+                            <span class="rec-line2">{{ r.method }}{% if r.subject %} · {{ r.subject }}{% endif %}</span>
+                            {% if r.question %}<span class="rec-question" title="{{ r.question }}">问：{{ r.question }}</span>{% endif %}
+                            <span class="rec-line3">{{ r.ju_shu }}</span>
+                        </a>
+                        {% else %}
+                        <div class="record-empty">暂无记录</div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Panel -->
+        <div class="right-panel">
+            <!-- 3D Viewport -->
+            <div class="qimen-3d-viewport">
+                <div class="qimen-3d-stage" id="qimenStage">
+                    <!-- 1. Earth Layer -->
+                    <div class="layer layer-earth">
+                        <div class="layer-label">地盘</div>
+                        {% for i in ['4', '9', '2', '3', '5', '7', '8', '1', '6'] %}
+                        <div class="cell-3d cell-earth" data-gong="{{ i }}">
+                            <span class="gong-num">{{ i }}</span>
+                            <span class="gong-name">{{ JIU_GONG[i].name }}</span>
+                            <span class="gong-dir">{{ JIU_GONG[i].direction }}</span>
+                            <span class="di-pan-gan">{{ qimen.diPan[i] if qimen.diPan else '' }}</span>
+                            <span class="an-gan">暗{{ qimen.jiuGongAnalysis[i].anGan }}</span>
+                            <span class="mark-strip">
+                                {% for m in qimen.jiuGongAnalysis[i].marks %}
+                                <span class="mark-chip lv-{{ m.level }}" title="{{ m.desc }}">{{ m.key }}</span>
+                                {% endfor %}
+                            </span>
+                        </div>
+                        {% endfor %}
+                    </div>
+
+                    <!-- 2. Man Layer -->
+                    <div class="layer layer-man">
+                        <div class="layer-label">人盘</div>
+                        {% for i in ['4', '9', '2', '3', '5', '7', '8', '1', '6'] %}
+                        <div class="cell-3d cell-man {{ 'ji' if qimen.jiuGongAnalysis[i].jiXiong == 'ji' else 'xiong' if qimen.jiuGongAnalysis[i].jiXiong == 'xiong' else '' }}" data-gong="{{ i }}">
+                            <span class="ba-men">{{ qimen.baMen[i] if qimen.baMen else '' }}</span>
+                        </div>
+                        {% endfor %}
+                    </div>
+
+                    <!-- 3. Heaven Layer -->
+                    <div class="layer layer-heaven">
+                        <div class="layer-label">天盘</div>
+                        {% for i in ['4', '9', '2', '3', '5', '7', '8', '1', '6'] %}
+                        <div class="cell-3d cell-heaven" data-gong="{{ i }}">
+                            <span class="jiu-xing">{{ qimen.jiuXing[i] if qimen.jiuXing else '' }}</span>
+                            <span class="tian-pan-gan">{{ qimen.tianPan[i] if qimen.tianPan else '' }}</span>
+                        </div>
+                        {% endfor %}
+                    </div>
+
+                    <!-- 4. God Layer -->
+                    <div class="layer layer-god">
+                        <div class="layer-label">神盘</div>
+                        {% for i in ['4', '9', '2', '3', '5', '7', '8', '1', '6'] %}
+                        <div class="cell-3d cell-god" data-gong="{{ i }}">
+                            <span class="ba-shen">{{ qimen.baShen[i] if qimen.baShen else '' }}</span>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                
+                <div class="controls-3d">
+                    <div class="layer-toggles">
+                        <button class="btn btn-sm" onclick="toggleMode()">2D/3D</button>
+                        <button class="btn btn-sm" onclick="resetView()">复位</button>
+                        <span style="width:10px"></span>
+                        <label class="layer-toggle-btn active" onclick="toggleLayer('god', this)">神盘</label>
+                        <label class="layer-toggle-btn active" onclick="toggleLayer('heaven', this)">天盘</label>
+                        <label class="layer-toggle-btn active" onclick="toggleLayer('man', this)">人盘</label>
+                        <label class="layer-toggle-btn active" onclick="toggleLayer('earth', this)">地盘</label>
+                        <span style="width:6px"></span>
+                        <label class="layer-toggle-btn active" id="marksToggle" onclick="toggleMarks(this)">标注</label>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Custom Pan Modal -->
+    <div class="modal" id="customPanModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>自定义排盘</h3>
+                <button class="close-btn" onclick="closeModal()">×</button>
+            </div>
+            <div class="modal-body">
+                <form id="customPanForm" action="/qimen/custom" method="get">
+                    <div class="form-group">
+                        <label for="type">排盘类型</label>
+                        <select id="type" name="type">
+                            <option value="四柱">四柱</option>
+                            <option value="三元">三元</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="method">排盘方法</label>
+                        <select id="method" name="method">
+                            <option value="时家">时家奇门</option>
+                            <option value="日家">日家奇门</option>
+                            <option value="月家">月家奇门</option>
+                            <option value="年家">年家奇门</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="date">日期</label>
+                        <input type="date" id="date" name="date" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="time">时间</label>
+                        <input type="time" id="time" name="time" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="location">地点</label>
+                        <input type="text" id="location" name="location" placeholder="如：北京市">
+                    </div>
+                    <div class="form-group">
+                        <label for="purpose">目的</label>
+                        <select id="purpose" name="purpose">
+                            <option value="综合">综合分析</option>
+                            <option value="事业">事业</option>
+                            <option value="财运">财运</option>
+                            <option value="婚姻">婚姻</option>
+                            <option value="健康">健康</option>
+                            <option value="学业">学业</option>
+                        </select>
+                    </div>
+                    <details class="opt-panel">
+                        <summary>起局设置（精度选项）</summary>
+                        <div class="opt-grid">
+                            <div class="form-group">
+                                <label for="optLongitude">当地东经（度）</label>
+                                <input type="number" id="optLongitude" name="longitude"
+                                       step="0.1" min="-180" max="180" placeholder="留空＝北京时间"
+                                       value="{{ qimen_options.longitude if qimen_options else '' }}">
+                            </div>
+                            <div class="form-group">
+                                <label for="optEot">均时差</label>
+                                <select id="optEot" name="eot">
+                                    <option value="1" {{ 'selected' if not qimen_options or qimen_options.eot == '1' else '' }}>叠加</option>
+                                    <option value="0" {{ 'selected' if qimen_options and qimen_options.eot == '0' else '' }}>不叠加</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="optLateZi">23 点换日</label>
+                                <select id="optLateZi" name="late_zi">
+                                    <option value="1" {{ 'selected' if not qimen_options or qimen_options.late_zi == '1' else '' }}>启用（晚子时进位）</option>
+                                    <option value="0" {{ 'selected' if qimen_options and qimen_options.late_zi == '0' else '' }}>停用（00:00 分界）</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="optDingJu">时家定局法</label>
+                                <select id="optDingJu" name="ding_ju">
+                                    <option value="拆补" {{ 'selected' if not qimen_options or qimen_options.ding_ju == '拆补' else '' }}>拆补法（节气为主）</option>
+                                    <option value="置闰" {{ 'selected' if qimen_options and qimen_options.ding_ju == '置闰' else '' }}>置闰法（符头为主）</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="optRiRun">日家逾三元</label>
+                                <select id="optRiRun" name="ri_run">
+                                    <option value="延续" {{ 'selected' if not qimen_options or qimen_options.ri_run == '延续' else '' }}>置闰续元（第三元延续）</option>
+                                    <option value="周而复始" {{ 'selected' if qimen_options and qimen_options.ri_run == '周而复始' else '' }}>周而复始（回上元）</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="optYearRule">年柱分界</label>
+                                <select id="optYearRule" name="year_rule">
+                                    <option value="立春" {{ 'selected' if not qimen_options or qimen_options.year_rule == '立春' else '' }}>立春（与月建一致）</option>
+                                    <option value="正月" {{ 'selected' if qimen_options and qimen_options.year_rule == '正月' else '' }}>农历正月初一</option>
+                                </select>
+                            </div>
+                        </div>
+                        <p class="opt-hint">经度留空即按东经 120° 钟表时间；均时差仅在填写经度时生效。晚子时（23:00 后）默认把日柱进位次日，使四柱自洽。置闰法以完整三元段换节气，超神过九于芒种／大雪行闰奇。</p>
+                    </details>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn" onclick="closeModal()">取消</button>
+                <button class="btn active" id="submitCustomPan">排盘</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Save Record Modal -->
+    <div class="modal" id="savePanModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>保存记录</h3>
+                <button class="close-btn" onclick="closeSaveModal()">×</button>
+            </div>
+            <div class="modal-body">
+                <form id="savePanForm" action="/qimen" method="post">
+                    <input type="hidden" id="saveDate" name="date" value="{{ qimen.basicInfo.dateRaw if qimen.basicInfo and qimen.basicInfo.dateRaw else '' }}">
+                    <input type="hidden" id="saveTime" name="time">
+                    <input type="hidden" id="saveMethod" name="method">
+                    <input type="hidden" id="savePurpose" name="purpose">
+                    <input type="hidden" id="saveLocation" name="location">
+                    <input type="hidden" name="longitude" value="{{ qimen_options.longitude if qimen_options else '' }}">
+                    <input type="hidden" name="eot" value="{{ qimen_options.eot if qimen_options else '1' }}">
+                    <input type="hidden" name="late_zi" value="{{ qimen_options.late_zi if qimen_options else '1' }}">
+                    <input type="hidden" name="ding_ju" value="{{ qimen_options.ding_ju if qimen_options else '拆补' }}">
+                    <input type="hidden" name="ri_run" value="{{ qimen_options.ri_run if qimen_options else '延续' }}">
+                    <input type="hidden" name="year_rule" value="{{ qimen_options.year_rule if qimen_options else '立春' }}">
+                    <div class="form-group">
+                        <label for="saveQuestion">问事 <span class="field-required">必填</span></label>
+                        <textarea id="saveQuestion" name="question" rows="2" required
+                                  placeholder="所问何事？如：本月能否签下 A 项目合同">{{ question if question is defined and question else '' }}</textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="saveSubject">标的 / 姓名</label>
+                        <input type="text" id="saveSubject" name="subject"
+                               value="{{ subject if subject is defined and subject else '' }}"
+                               placeholder="如：张某、A 项目">
+                    </div>
+                    <div class="form-group">
+                        <label for="saveTags">标签</label>
+                        <input type="text" id="saveTags" name="tags"
+                               value="{{ tags if tags is defined and tags else '' }}"
+                               placeholder="逗号分隔">
+                    </div>
+                    <div class="form-group">
+                        <label for="saveRemarks">备注</label>
+                        <textarea id="saveRemarks" name="remarks" rows="3">{{ remarks if remarks is defined and remarks else '' }}</textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn" onclick="closeSaveModal()">取消</button>
+                <button class="btn active" id="submitSavePan">保存</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- jQuery -->
+    <script src="https://cdn.jsdelivr.net/npm/jquery@3.7.1/dist/jquery.min.js"></script>
+    
+    <script>
+        // 起局精度选项（服务端注入，局部刷新时原样回传）
+        const panOptions = {{ qimen_options | tojson }};
+
+        function optionQuery() {
+            const p = new URLSearchParams();
+            Object.keys(panOptions).forEach(function (k) {
+                const v = panOptions[k];
+                p.set(k, (v === null || v === undefined) ? '' : String(v));
+            });
+            return p.toString();
+        }
+        function withOptions(url) {
+            const q = optionQuery();
+            return q ? url + (url.indexOf('?') >= 0 ? '&' : '?') + q : url;
+        }
+        function esc(s) {
+            return String(s == null ? '' : s)
+                .replace(/&/g, '&amp;').replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+        }
+        function toggleMarks(el) {
+            const stageEl = document.getElementById('qimenStage');
+            const hidden = stageEl.classList.toggle('hide-marks');
+            el.classList.toggle('active', !hidden);
+        }
+        function jumpToMarks() {
+            const d = document.getElementById('markPanel');
+            if (!d) return;
+            d.open = true;
+            d.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+        function toggleBasis() {
+            const d = document.getElementById('markPanel');
+            if (!d) return;
+            d.open = !d.open;
+            if (d.open) d.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+        function renderMarks(data) {
+            for (let i = 1; i <= 9; i++) {
+                const gong = String(i);
+                const a = (data.jiuGongAnalysis || {})[gong] || {};
+                const cell = document.querySelector('.cell-earth[data-gong="' + gong + '"]');
+                if (!cell) continue;
+                cell.querySelector('.an-gan').textContent = '暗' + (a.anGan || '');
+                cell.querySelector('.mark-strip').innerHTML = (a.marks || []).map(function (m) {
+                    return '<span class="mark-chip lv-' + esc(m.level) + '" title="' + esc(m.desc) + '">' + esc(m.key) + '</span>';
+                }).join('');
+            }
+        }
+        function renderMarkDetail(data) {
+            const legend = document.getElementById('markLegend');
+            if (legend) {
+                legend.innerHTML = (data.geJuLegend || []).map(function (g) {
+                    return '<span title="' + esc(g.desc) + '"><b>' + esc(g.key) + '</b> ' + esc(g.name) + '</span>';
+                }).join('');
+            }
+            const box = document.getElementById('markDetail');
+            if (!box) return;
+            let html = '';
+            ['1', '2', '3', '4', '5', '6', '7', '8', '9'].forEach(function (g) {
+                const a = (data.jiuGongAnalysis || {})[g] || {};
+                if (a.geJuText) {
+                    html += '<div class="mark-row"><strong>' + esc(a.gongName) + g + '宫</strong> · ' + esc(a.geJuText) + '</div>';
+                }
+            });
+            html += '<div class="mark-row qf"><strong>暗干</strong> · ' + esc(data.anGanRule || '') + '</div>';
+            if (data.yiMa) html += '<div class="mark-row qf"><strong>驿马</strong> · ' + esc(data.yiMa.rule) + '</div>';
+            const ju = data.juShu || {};
+            if (ju.note) html += '<div class="mark-row qf"><strong>局数取法</strong> · ' + esc(ju.note) + '</div>';
+            if (data.zhiFuXingNote) html += '<div class="mark-row qf"><strong>中宫值符</strong> · ' + esc(data.zhiFuXingNote) + '</div>';
+            const ti = data.timeInfo || {};
+            if (ti.jieQiAt) html += '<div class="mark-row qf"><strong>节气交接</strong> · ' + esc(ti.jieQi) + ' ' + esc(ti.jieQiAt) + '</div>';
+            html += '<div class="mark-row qf"><strong>流派口径</strong> · 月家值使依《奇门遁甲统宗》按九宫固定地支宫加临（非「月支落二宫」一说）</div>';
+            box.innerHTML = html;
+        }
+
+        // Modal Functions
+        function openModal() {
+            document.getElementById('customPanModal').classList.add('show');
+        }
+        function closeModal() {
+            document.getElementById('customPanModal').classList.remove('show');
+        }
+
+        // 3D Interaction Logic
+        let isDragging = false;
+        let previousMousePosition = { x: 0, y: 0 };
+        let rotation = { x: 55, z: -25 };
+        let scale = 1;
+        const DEFAULT_ROTATION = { x: 55, z: -25 };
+        const stage = document.getElementById('qimenStage');
+        const viewport = document.querySelector('.qimen-3d-viewport');
+
+        // 合并同一帧内的多次更新，避免每个事件都触发一次样式写入
+        function updateTransform() {
+            stage.style.transform = `scale3d(${scale}, ${scale}, ${scale}) rotateX(${rotation.x}deg) rotateZ(${rotation.z}deg)`;
+        }
+
+        // 只在一帧内累加位移，真正写样式交给 requestAnimationFrame
+        let pendingDelta = { x: 0, y: 0 };
+        let deltaPending = false;
+        function accumulateDrag(dx, dy) {
+            pendingDelta.x += dx;
+            pendingDelta.y += dy;
+            if (deltaPending) return;
+            deltaPending = true;
+            requestAnimationFrame(() => {
+                deltaPending = false;
+                const step = pendingDelta;
+                pendingDelta = { x: 0, y: 0 };
+                rotation.z += step.x * 0.4;
+                rotation.x -= step.y * 0.4;
+                rotation.x = Math.min(Math.max(rotation.x, -89), 89);
+                updateTransform();
+            });
+        }
+
+        viewport.addEventListener('pointerdown', (e) => {
+            // 控件区域（2D/3D、复位、层开关）不参与旋转
+            if (e.target.closest('.controls-3d')) return;
+            if (e.button !== undefined && e.button !== 0) return;
+            isDragging = true;
+            previousMousePosition = { x: e.clientX, y: e.clientY };
+            viewport.classList.add('is-dragging');
+            stage.classList.remove('is-settling');
+            try { viewport.setPointerCapture(e.pointerId); } catch (err) {}
+            e.preventDefault();
+        });
+
+        viewport.addEventListener('pointermove', (e) => {
+            if (!isDragging) return;
+            accumulateDrag(e.clientX - previousMousePosition.x, e.clientY - previousMousePosition.y);
+            previousMousePosition = { x: e.clientX, y: e.clientY };
+        });
+
+        function endDrag(e) {
+            if (!isDragging) return;
+            isDragging = false;
+            viewport.classList.remove('is-dragging');
+            if (e && e.pointerId !== undefined) {
+                try { viewport.releasePointerCapture(e.pointerId); } catch (err) {}
+            }
+        }
+        viewport.addEventListener('pointerup', endDrag);
+        viewport.addEventListener('pointercancel', endDrag);
+        window.addEventListener('blur', () => endDrag());
+
+        // Mouse Wheel Zoom（同样合并到一帧）
+        let pendingWheel = 0;
+        let wheelPending = false;
+        viewport.addEventListener('wheel', (e) => {
+            e.preventDefault();
+            pendingWheel += e.deltaY * -0.001;
+            if (wheelPending) return;
+            wheelPending = true;
+            requestAnimationFrame(() => {
+                wheelPending = false;
+                const delta = pendingWheel;
+                pendingWheel = 0;
+                scale = Math.min(Math.max(0.5, scale + delta), 3);
+                updateTransform();
+            });
+        }, { passive: false });
+
+        // 复位/切换视角时给一次短暂过渡，让动作显得顺滑
+        function settleTransform() {
+            stage.classList.add('is-settling');
+            updateTransform();
+            window.setTimeout(() => stage.classList.remove('is-settling'), 320);
+        }
+
+        function resetView() {
+            rotation = { x: DEFAULT_ROTATION.x, z: DEFAULT_ROTATION.z };
+            scale = 1;
+            settleTransform();
+        }
+
+        function toggleMode() {
+            if (rotation.x === 0 && rotation.z === 0) {
+                resetView();
+            } else {
+                rotation = { x: 0, z: 0 };
+                scale = 1;
+                settleTransform();
+            }
+        }
+
+        function toggleLayer(layerName, btn) {
+            const layer = document.querySelector(`.layer-${layerName}`);
+            if (layer.style.display === 'none') {
+                layer.style.display = 'grid';
+                btn.classList.add('active');
+            } else {
+                layer.style.display = 'none';
+                btn.classList.remove('active');
+            }
+        }
+
+        function openSaveModal() {
+            const y = globalCurrentDate.getFullYear();
+            const mo = String(globalCurrentDate.getMonth() + 1).padStart(2, '0');
+            const d = String(globalCurrentDate.getDate()).padStart(2, '0');
+            const h = String(globalCurrentDate.getHours()).padStart(2, '0');
+            const mi = String(globalCurrentDate.getMinutes()).padStart(2, '0');
+
+            $('#saveDate').val(`${y}-${mo}-${d}`);
+            $('#saveTime').val(`${h}:${mi}`);
+            $('#saveMethod').val($('#panMethod').val() || '时家');
+            $('#savePurpose').val($('#purpose').val() || '综合');
+            $('#saveLocation').val($('#location').val() || '默认位置');
+            $('#savePanModal').addClass('show');
+        }
+        function closeSaveModal() {
+            $('#savePanModal').removeClass('show');
+        }
+
+        function saveQimenRemarks() {
+            const recordId = {{ record_id if record_id else 'null' }};
+            if (!recordId) return;
+            const payload = { record_id: recordId, remarks: $('#qimenRemarks').val() };
+            const qBox = document.getElementById('qimenQuestion');
+            if (qBox) payload.question = qBox.value;
+            $.ajax({
+                url: '/qimen/update_remarks',
+                type: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify(payload),
+                success: function(res) {
+                    if (res.status === 'success') {
+                        if (payload.question !== undefined && document.getElementById('panQuestion')) {
+                            document.getElementById('panQuestion').textContent = payload.question;
+                        }
+                        alert('记录已保存');
+                    } else {
+                        alert('保存失败: ' + res.message);
+                    }
+                },
+                error: function() { alert('保存失败'); }
+            });
+        }
+
+        function deleteQimenRecord() {
+            const recordId = {{ record_id if record_id else 'null' }};
+            if (!recordId || !confirm('确认删除这条记录？')) return;
+            $.ajax({
+                url: '/qimen/delete',
+                type: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify({ record_id: recordId }),
+                success: function(res) {
+                    if (res.status === 'success') {
+                        window.location.href = '/qimen';
+                    } else {
+                        alert('删除失败: ' + res.message);
+                    }
+                },
+                error: function() { alert('删除失败'); }
+            });
+        }
+
+        // Global state to track current displayed time
+        let globalCurrentDate = new Date();
+
+        // Initialize global state from URL or default
+        function initGlobalState() {
+            const urlParams = new URLSearchParams(window.location.search);
+            let currentDateStr = urlParams.get('date');
+            let currentTimeStr = urlParams.get('time');
+            
+            if (currentDateStr && currentTimeStr) {
+                globalCurrentDate = new Date(currentDateStr + 'T' + currentTimeStr);
+            } else if (currentDateStr) {
+                globalCurrentDate = new Date(currentDateStr);
+            } else {
+                globalCurrentDate = new Date();
+            }
+        }
+
+        // Time manipulation functions
+        function changeTime(offset) {
+            const method = $('#panMethod').val() || '时家';
+            if (method === '年家') {
+                globalCurrentDate.setFullYear(globalCurrentDate.getFullYear() + offset);
+            } else if (method === '月家') {
+                globalCurrentDate.setMonth(globalCurrentDate.getMonth() + offset);
+            } else if (method === '日家') {
+                globalCurrentDate.setDate(globalCurrentDate.getDate() + offset);
+            } else {
+                globalCurrentDate.setHours(globalCurrentDate.getHours() + (offset * 2));
+            }
+            
+            const year = globalCurrentDate.getFullYear();
+            const month = String(globalCurrentDate.getMonth() + 1).padStart(2, '0');
+            const day = String(globalCurrentDate.getDate()).padStart(2, '0');
+            const hours = String(globalCurrentDate.getHours()).padStart(2, '0');
+            const minutes = String(globalCurrentDate.getMinutes()).padStart(2, '0');
+            const seconds = String(globalCurrentDate.getSeconds()).padStart(2, '0');
+            
+            const newDateStr = `${year}-${month}-${day}`;
+            const newTimeStr = `${hours}:${minutes}:${seconds}`;
+            
+            $.getJSON(withOptions(`/qimen/api?date=${newDateStr}&time=${newTimeStr}&method=${method}&format=json`), function(data) {
+                updateUI(data);
+                const newUrl = withOptions(window.location.pathname + `?date=${newDateStr}&time=${newTimeStr}&method=${method}`);
+                window.history.pushState({path: newUrl}, '', newUrl);
+            }).fail(function() {
+                alert("获取排盘数据失败，请重试。");
+            });
+        }
+        
+        function resetTime() {
+            globalCurrentDate = new Date();
+            const year = globalCurrentDate.getFullYear();
+            const month = String(globalCurrentDate.getMonth() + 1).padStart(2, '0');
+            const day = String(globalCurrentDate.getDate()).padStart(2, '0');
+            const hours = String(globalCurrentDate.getHours()).padStart(2, '0');
+            const minutes = String(globalCurrentDate.getMinutes()).padStart(2, '0');
+            const seconds = String(globalCurrentDate.getSeconds()).padStart(2, '0');
+            
+            const newDateStr = `${year}-${month}-${day}`;
+            const newTimeStr = `${hours}:${minutes}:${seconds}`;
+            const method = $('#panMethod').val() || '时家';
+            
+            $.getJSON(withOptions(`/qimen/api?date=${newDateStr}&time=${newTimeStr}&method=${method}&format=json`), function(data) {
+                updateUI(data);
+                const newUrl = withOptions(window.location.pathname + `?date=${newDateStr}&time=${newTimeStr}&method=${method}`);
+                window.history.pushState({path: newUrl}, '', newUrl);
+            });
+        }
+        
+        function changeMethod(method) {
+            const urlParams = new URLSearchParams(window.location.search);
+            urlParams.set('method', method);
+            
+            const year = globalCurrentDate.getFullYear();
+            const month = String(globalCurrentDate.getMonth() + 1).padStart(2, '0');
+            const day = String(globalCurrentDate.getDate()).padStart(2, '0');
+            const hours = String(globalCurrentDate.getHours()).padStart(2, '0');
+            const minutes = String(globalCurrentDate.getMinutes()).padStart(2, '0');
+            const seconds = String(globalCurrentDate.getSeconds()).padStart(2, '0');
+            
+            const newDateStr = `${year}-${month}-${day}`;
+            const newTimeStr = `${hours}:${minutes}:${seconds}`;
+            
+            const requestUrl = withOptions(`/qimen/api?date=${newDateStr}&time=${newTimeStr}&method=${encodeURIComponent(method)}&format=json&_=${new Date().getTime()}`);
+
+            $.getJSON(requestUrl, function(data) {
+                updateUI(data);
+                const newUrl = withOptions(window.location.pathname + `?date=${newDateStr}&time=${newTimeStr}&method=${encodeURIComponent(method)}`);
+                window.history.pushState({path: newUrl}, '', newUrl);
+            }).fail(function(jqXHR, textStatus, errorThrown) {
+                alert("切换排盘方式失败");
+            });
+        }
+
+        function updateUI(data) {
+            if (data.error) {
+                alert("排盘错误: " + data.message);
+                return;
+            }
+
+            // 同步当前盘面对应的时间，供保存记录使用
+            if (data.basicInfo && data.basicInfo.dateRaw && data.basicInfo.timeRaw) {
+                const parsed = new Date(`${data.basicInfo.dateRaw}T${data.basicInfo.timeRaw}`);
+                if (!isNaN(parsed.getTime())) {
+                    globalCurrentDate = parsed;
+                }
+            }
+
+            $('#solarDate').text(data.basicInfo.date);
+            $('#lunarDate').text(data.basicInfo.lunarDate);
+            
+            const method = data.basicInfo.method || '时家';
+            $('#panMethod').val(method);
+            
+            $('#sizhu-year').text(data.siZhu.year).show();
+            $('#sizhu-month').text(data.siZhu.month);
+            $('#sizhu-day').text(data.siZhu.day);
+            $('#sizhu-time').text(data.siZhu.time);
+            
+            if (method === '年家') {
+                $('#sizhu-month').hide(); $('#sizhu-day').hide(); $('#sizhu-time').hide();
+            } else if (method === '月家') {
+                $('#sizhu-month').show(); $('#sizhu-day').hide(); $('#sizhu-time').hide();
+            } else if (method === '日家') {
+                $('#sizhu-month').show(); $('#sizhu-day').show(); $('#sizhu-time').hide();
+            } else {
+                $('#sizhu-month').show(); $('#sizhu-day').show(); $('#sizhu-time').show();
+            }
+            
+            $('#juShu').text(data.juShu.fullName).attr('title', data.juShu.note || '');
+            $('#xunShou').text(data.xunShou);
+            $('#zhiFu').text(`${data.zhiFuXing}(${data.zhiFuGong}宫)`).attr('title', data.zhiFuXingNote || '');
+            $('#zhiShi').text(`${data.zhiShiMen}(${data.zhiShiGong}宫)`);
+            const note = (data.basicInfo && data.basicInfo.timeNote) || '';
+            $('#timeNote').text(note).attr('title', note);
+            $('#markSummary').text(data.markSummary || '');
+
+            for (let i = 1; i <= 9; i++) {
+                let gong = i.toString();
+                $(`.cell-earth[data-gong="${gong}"] .di-pan-gan`).text(data.diPan[gong] || '');
+                
+                let manCell = $(`.cell-man[data-gong="${gong}"]`);
+                manCell.find('.ba-men').text(data.baMen[gong] || '');
+                manCell.removeClass('ji xiong');
+                if (data.jiuGongAnalysis[gong] && data.jiuGongAnalysis[gong].jiXiong === 'ji') {
+                    manCell.addClass('ji');
+                } else if (data.jiuGongAnalysis[gong] && data.jiuGongAnalysis[gong].jiXiong === 'xiong') {
+                    manCell.addClass('xiong');
+                }
+                
+                $(`.cell-heaven[data-gong="${gong}"] .jiu-xing`).text(data.jiuXing[gong] || '');
+                $(`.cell-heaven[data-gong="${gong}"] .tian-pan-gan`).text(data.tianPan[gong] || '');
+                $(`.cell-god[data-gong="${gong}"] .ba-shen`).text(data.baShen[gong] || '');
+            }
+            renderMarks(data);
+            renderMarkDetail(data);
+        }
+
+        $(document).ready(function() {
+            initGlobalState();
+            
+            const initialMethod = $('#panMethod').val();
+            if (initialMethod === '年家') {
+                $('#sizhu-month').hide(); $('#sizhu-day').hide(); $('#sizhu-time').hide();
+            } else if (initialMethod === '月家') {
+                $('#sizhu-month').show(); $('#sizhu-day').hide(); $('#sizhu-time').hide();
+            } else if (initialMethod === '日家') {
+                $('#sizhu-month').show(); $('#sizhu-day').show(); $('#sizhu-time').hide();
+            }
+
+            $('#submitCustomPan').click(function() {
+                $('#customPanForm').submit();
+            });
+
+            $('#submitSavePan').click(function() {
+                // jQuery 的 .submit() 会绕过 HTML5 校验，需先手动触发问事必填检查
+                const form = document.getElementById('savePanForm');
+                if (form && typeof form.reportValidity === 'function' && !form.reportValidity()) {
+                    return;
+                }
+                $('#savePanForm').submit();
+            });
+            
+            const urlParams = new URLSearchParams(window.location.search);
+            let serverDateStr = urlParams.get('date');
+            let serverTimeStr = urlParams.get('time');
+            
+            var now = new Date();
+            if (serverDateStr && serverTimeStr) {
+                now = new Date(serverDateStr + 'T' + serverTimeStr);
+            }
+            
+            var dateStr = now.toISOString().split('T')[0];
+            var timeStr = now.toTimeString().split(' ')[0].substring(0, 5);
+            
+            if(!$('#date').val()) $('#date').val(dateStr);
+            if(!$('#time').val()) $('#time').val(timeStr);
+        });
+    </script>
+</body>
+</html>

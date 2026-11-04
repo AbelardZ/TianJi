@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>天机系统</title>
+    <style>
+        :root {
+            --bg-body: #f4ecd8;
+            --bg-card: #fdfbf7;
+            --bg-panel-left: #f9f6f0;
+            --border-color: #d8cbb8;
+            --text-main: #2c2a26;
+            --text-secondary: #5c5549;
+            --primary-color: #8b2f2f;
+            --primary-hover: #722424;
+            --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+            --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            --radius-md: 8px;
+            --radius-lg: 16px;
+            --home-line: rgba(140, 48, 48, 0.20);
+        }
+
+        [data-theme="dark"] {
+            --home-line: rgba(217, 185, 114, 0.22);
+            --bg-body: #1c1a18;
+            --bg-card: #262320;
+            --bg-panel-left: #211e1c;
+            --border-color: #403b36;
+            --text-main: #e8e2d5;
+            --text-secondary: #a39c91;
+            --primary-color: #a84242;
+            --primary-hover: #c95151;
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            font-family: "Noto Serif SC", "SimSun", "STZhongsong", serif;
+            background-color: var(--bg-body);
+            color: var(--text-main);
+            margin: 0;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: stretch;
+            justify-content: flex-start;
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+
+        .home-main {
+            position: relative;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 3.5rem 1.5rem 3rem;
+            overflow: hidden;
+        }
+        /* 一圈极淡的「天圆」意象，只作氛围，不干扰阅读 */
+        .home-main::before {
+            content: "";
+            position: absolute;
+            top: 47%;
+            left: 50%;
+            width: min(860px, 130vw);
+            height: min(860px, 130vw);
+            transform: translate(-50%, -50%);
+            border: 1px solid rgba(140, 48, 48, 0.070);
+            border-radius: 50%;
+            box-shadow: 0 0 0 22px rgba(140, 48, 48, 0.010),
+                        0 0 0 23px rgba(140, 48, 48, 0.026),
+                        inset 0 0 0 1px rgba(177, 138, 62, 0.045),
+                        inset 0 0 90px rgba(177, 138, 62, 0.030);
+            pointer-events: none;
+        }
+        .home-main::after {
+            content: "";
+            position: absolute;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            height: 200px;
+            background: linear-gradient(0deg, rgba(177, 138, 62, 0.075), transparent);
+            pointer-events: none;
+        }
+        [data-theme="dark"] .home-main::before {
+            border-color: rgba(217, 185, 114, 0.050);
+            box-shadow: 0 0 0 22px rgba(217, 185, 114, 0.008),
+                        0 0 0 23px rgba(217, 185, 114, 0.020),
+                        inset 0 0 0 1px rgba(217, 185, 114, 0.030),
+                        inset 0 0 90px rgba(217, 185, 114, 0.022);
+        }
+        [data-theme="dark"] .home-main::after {
+            background: linear-gradient(0deg, rgba(217, 185, 114, 0.035), transparent);
+        }
+
+        .brand {
+            position: relative;
+            z-index: 1;
+            text-align: center;
+            margin-bottom: 3rem;
+        }
+        .brand .eyebrow {
+            margin: 0 0 1.15rem;
+            font-size: 0.7rem;
+            letter-spacing: 0.48em;
+            color: var(--gold-text);
+            text-indent: 0.48em;
+        }
+        .brand .logo {
+            font-family: 'Kaiti', 'STKaiti', 'KaiTi', serif;
+            font-size: clamp(2.8rem, 5vw, 4rem);
+            font-weight: 700;
+            letter-spacing: 0.24em;
+            text-indent: 0.24em;
+            color: var(--primary-color);
+            margin: 0;
+            line-height: 1.2;
+            text-shadow: 0 1px 0 rgba(255, 255, 255, 0.65);
+        }
+        [data-theme="dark"] .brand .logo { text-shadow: none; }
+        .brand .rule {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.85rem;
+            width: min(420px, 78vw);
+            margin: 1.3rem auto 1rem;
+        }
+        .brand .rule span {
+            flex: 1;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, var(--home-line));
+        }
+        .brand .rule span:last-child {
+            background: linear-gradient(90deg, var(--home-line), transparent);
+        }
+        .brand .rule i {
+            width: 6px;
+            height: 6px;
+            flex-shrink: 0;
+            transform: rotate(45deg);
+            background: var(--primary-color);
+            opacity: 0.75;
+        }
+        .brand .subtitle {
+            font-size: 1rem;
+            color: var(--text-secondary);
+            letter-spacing: 0.32em;
+            text-indent: 0.32em;
+            margin: 0;
+        }
+
+        .cards {
+            position: relative;
+            z-index: 1;
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 1.25rem;
+            width: 100%;
+            max-width: 930px;
+            margin: 0 auto;
+        }
+
+        .card {
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-decoration: none;
+            overflow: hidden;
+            padding: 1.9rem 1.2rem 1.7rem;
+            background: linear-gradient(180deg, var(--bg-card), var(--surface-alt));
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-sm);
+            color: var(--text-main);
+            animation: card-in 0.55s ease-out backwards;
+            transition: transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1),
+                        box-shadow 0.3s ease, border-color 0.3s ease;
+        }
+        .card:nth-child(1) { animation-delay: 0.04s; }
+        .card:nth-child(2) { animation-delay: 0.12s; }
+        .card:nth-child(3) { animation-delay: 0.20s; }
+        .card:nth-child(4) { animation-delay: 0.28s; }
+        .card:nth-child(5) { animation-delay: 0.36s; }
+        .card:nth-child(6) { animation-delay: 0.44s; }
+        @keyframes card-in {
+            from { opacity: 0; transform: translateY(16px); }
+            to   { opacity: 1; transform: none; }
+        }
+        .card::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, var(--primary-color), var(--gold));
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+        .card:hover {
+            transform: translateY(-8px);
+            box-shadow: var(--shadow-lg);
+            border-color: rgba(177, 138, 62, 0.62);
+        }
+        .card:hover::before { opacity: 1; }
+
+        .card .ordinal {
+            position: absolute;
+            top: 1.05rem;
+            right: 1.15rem;
+            font-family: 'Kaiti', 'STKaiti', serif;
+            font-size: 0.82rem;
+            letter-spacing: 0.06em;
+            color: var(--text-secondary);
+            opacity: 0.72;
+        }
+        .card .icon {
+            width: 62px;
+            height: 62px;
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            font-family: 'Kaiti', 'STKaiti', serif;
+            font-size: 1.85rem;
+            line-height: 1;
+            color: var(--primary-color);
+            background: rgba(140, 48, 48, 0.065);
+            border: 1px solid rgba(140, 48, 48, 0.14);
+            margin-bottom: 1.1rem;
+            transition: background-color 0.3s ease, color 0.3s ease,
+                        border-color 0.3s ease, transform 0.3s ease;
+        }
+        .card:hover .icon {
+            background: var(--primary-color);
+            color: #fff8ec;
+            border-color: var(--primary-color);
+            transform: rotate(-6deg) scale(1.05);
+        }
+        .card .name {
+            font-family: 'Kaiti', 'STKaiti', 'KaiTi', serif;
+            font-size: 1.3rem;
+            font-weight: 700;
+            letter-spacing: 0.12em;
+            text-indent: 0.16em;
+            color: var(--text-main);
+            margin-bottom: 0.35rem;
+        }
+        .card .en {
+            font-size: 0.64rem;
+            letter-spacing: 0.2em;
+            text-indent: 0.2em;
+            color: var(--ink-faint);
+            margin-bottom: 1.05rem;
+            text-transform: uppercase;
+        }
+        .card .divider {
+            width: 36px;
+            height: 1px;
+            background: var(--gold);
+            opacity: 0.7;
+            margin-bottom: 1.5rem;
+        }
+        .card .enter {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.55rem;
+            font-size: 0.88rem;
+            color: var(--primary-color);
+            border: 1px solid rgba(140, 48, 48, 0.38);
+            border-radius: 999px;
+            padding: 0.48rem 1.35rem;
+            letter-spacing: 0.18em;
+            text-indent: 0.18em;
+            transition: background-color 0.25s ease, color 0.25s ease, border-color 0.25s ease;
+        }
+        .card .enter .arrow {
+            font-size: 1rem;
+            line-height: 1;
+            transition: transform 0.25s ease;
+        }
+        .card:hover .enter {
+            background: var(--primary-color);
+            color: #fff8ec;
+            border-color: var(--primary-color);
+        }
+        .card:hover .enter .arrow { transform: translateX(4px); }
+
+        [data-theme="dark"] .card {
+            background: linear-gradient(180deg, #2d2925, #26221c);
+        }
+        [data-theme="dark"] .card .icon {
+            background: rgba(181, 80, 76, 0.13);
+            border-color: rgba(181, 80, 76, 0.26);
+        }
+        [data-theme="dark"] .card .enter { border-color: rgba(181, 80, 76, 0.55); }
+
+        .home-foot {
+            position: relative;
+            z-index: 1;
+            margin: 3rem 0 0;
+            font-size: 0.76rem;
+            letter-spacing: 0.3em;
+            text-indent: 0.3em;
+            color: var(--ink-faint);
+        }
+
+        /* 两排三列：每卡需 ≥240px 才不至于把说明挤成孤字 */
+        @media (max-width: 1040px) {
+            .home-main { padding-left: 1.1rem; padding-right: 1.1rem; }
+            .cards { gap: 1.1rem; }
+        }
+        @media (max-width: 880px) {
+            .cards { grid-template-columns: repeat(2, minmax(0, 265px)); max-width: 580px; justify-content: center; }
+        }
+        @media (max-width: 600px) {
+            .home-main { padding: 2.5rem 1rem 2.5rem; }
+            .brand { margin-bottom: 2.2rem; }
+            .brand .logo { font-size: 2.5rem; }
+            .brand .subtitle { font-size: 0.82rem; letter-spacing: 0.16em; text-indent: 0.16em; line-height: 1.9; }
+            .cards { grid-template-columns: minmax(0, 300px); }
+            .card { padding: 1.7rem 1.4rem 1.5rem; }
+            .home-foot { margin-top: 2.2rem; }
+        }
+        @media (prefers-reduced-motion: reduce) {
+            .card { animation: none; }
+        }
+    </style>
+    <link rel="stylesheet" href="/static/css/tianji.css">
+    <script src="/static/js/tianji.js"></script>
+</head>
+<body>
+    {% include '_header.html' %}
+
+    <main class="home-main">
+        <div class="brand">
+            <p class="eyebrow">TIANJI SYSTEM · 術數排盤</p>
+            <h1 class="logo">天机系统</h1>
+            <div class="rule" aria-hidden="true"><span></span><i></i><span></span></div>
+            <p class="subtitle">命 理 · 六 爻 · 梅 花 · 奇 门 · 小 六 壬 · 大 六 壬</p>
+        </div>
+
+        <div class="cards">
+            <a href="/mingli" class="card">
+                <span class="ordinal">壹</span>
+                <div class="icon">☯</div>
+                <div class="name">命理排盘</div>
+                <div class="en">Ming Li</div>
+                <div class="divider"></div>
+                <div class="enter">进入<span class="arrow">→</span></div>
+            </a>
+            <a href="/liuyao" class="card">
+                <span class="ordinal">贰</span>
+                <div class="icon">☰</div>
+                <div class="name">六爻排盘</div>
+                <div class="en">Liu Yao</div>
+                <div class="divider"></div>
+                <div class="enter">进入<span class="arrow">→</span></div>
+            </a>
+            <a href="/meihua" class="card">
+                <span class="ordinal">叁</span>
+                <div class="icon">梅</div>
+                <div class="name">梅花易数</div>
+                <div class="en">Mei Hua Yi Shu</div>
+                <div class="divider"></div>
+                <div class="enter">进入<span class="arrow">→</span></div>
+            </a>
+            <a href="/qimen" class="card">
+                <span class="ordinal">肆</span>
+                <div class="icon">奇</div>
+                <div class="name">奇门排盘</div>
+                <div class="en">Qi Men</div>
+                <div class="divider"></div>
+                <div class="enter">进入<span class="arrow">→</span></div>
+            </a>
+            <a href="/xiaoliuren" class="card">
+                <span class="ordinal">伍</span>
+                <div class="icon">壬</div>
+                <div class="name">小六壬</div>
+                <div class="en">Xiao Liu Ren</div>
+                <div class="divider"></div>
+                <div class="enter">进入<span class="arrow">→</span></div>
+            </a>
+            <a href="/daliuren" class="card">
+                <span class="ordinal">陆</span>
+                <div class="icon">式</div>
+                <div class="name">大六壬</div>
+                <div class="en">Da Liu Ren</div>
+                <div class="divider"></div>
+                <div class="enter">进入<span class="arrow">→</span></div>
+            </a>
+        </div>
+
+        <p class="home-foot">以 數 觀 象 · 以 象 明 理</p>
+    </main>
+</body>
+</html>
