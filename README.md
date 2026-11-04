@@ -31,8 +31,8 @@
 三步可启，不必建库。
 
 ```powershell
-git clone https://github.com/AbelardZ/LiuYao.git
-cd LiuYao
+git clone https://github.com/AbelardZ/TianJi.git
+cd TianJi
 pip install -r requirements.txt
 python main.py
 ```
