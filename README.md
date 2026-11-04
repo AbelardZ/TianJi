@@ -21,8 +21,8 @@
 ## 快速开始
 
 ```powershell
-git clone https://github.com/AbelardZ/liuyao.git
-cd liuyao
+git clone https://github.com/AbelardZ/LiuYao.git
+cd LiuYao
 pip install -r requirements.txt
 python main.py
 ```
